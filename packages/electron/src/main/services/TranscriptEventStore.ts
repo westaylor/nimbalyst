@@ -136,6 +136,15 @@ export function createTranscriptEventStore(
       );
     },
 
+    async updateEventText(id, searchableText): Promise<void> {
+      await ensureReady();
+
+      await db.query(
+        `UPDATE ai_transcript_events SET searchable_text = $1 WHERE id = $2`,
+        [searchableText, id],
+      );
+    },
+
     async getSessionEvents(sessionId, options): Promise<TranscriptEvent[]> {
       await ensureReady();
 

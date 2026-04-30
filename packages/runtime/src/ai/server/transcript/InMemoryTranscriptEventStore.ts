@@ -50,6 +50,13 @@ export class InMemoryTranscriptEventStore implements ITranscriptEventStore {
     }
   }
 
+  async updateEventText(id: number, searchableText: string): Promise<void> {
+    const idx = this.events.findIndex(e => e.id === id);
+    if (idx >= 0) {
+      this.events[idx] = { ...this.events[idx], searchableText };
+    }
+  }
+
   async getSessionEvents(
     sessionId: string,
     options?: { eventTypes?: TranscriptEventType[]; limit?: number; offset?: number },
@@ -109,8 +116,18 @@ export class InMemoryTranscriptEventStore implements ITranscriptEventStore {
     throw new Error('InMemoryTranscriptEventStore: searchSessions not supported');
   }
 
-  async getTailEvents(): Promise<TranscriptEvent[]> {
-    throw new Error('InMemoryTranscriptEventStore: getTailEvents not supported');
+  async getTailEvents(
+    sessionId: string,
+    count: number,
+    options?: { excludeEventTypes?: TranscriptEventType[] },
+  ): Promise<TranscriptEvent[]> {
+    let filtered = this.events.filter(e => e.sessionId === sessionId);
+    if (options?.excludeEventTypes && options.excludeEventTypes.length > 0) {
+      const excluded = new Set(options.excludeEventTypes);
+      filtered = filtered.filter(e => !excluded.has(e.eventType));
+    }
+    filtered.sort((a, b) => a.sequence - b.sequence);
+    return filtered.slice(-count);
   }
 
   async deleteSessionEvents(sessionId: string): Promise<void> {

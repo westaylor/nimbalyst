@@ -32,6 +32,13 @@ export function createMockStore(): ITranscriptEventStore {
       }
     },
 
+    async updateEventText(id, searchableText) {
+      const event = events.find((e) => e.id === id);
+      if (event) {
+        event.searchableText = searchableText;
+      }
+    },
+
     async getSessionEvents(sessionId, options) {
       let result = events
         .filter((e) => e.sessionId === sessionId)

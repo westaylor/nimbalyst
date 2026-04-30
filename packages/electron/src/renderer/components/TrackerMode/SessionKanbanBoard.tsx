@@ -285,8 +285,12 @@ function TranscriptPeek({ sessionId, anchorRef, onClose }: TranscriptPeekProps) 
     }
 
     let cancelled = false;
+    // Fetch a generous tail. The projector coalesces adjacent assistant_message
+    // events, and legacy codex-acp sessions stored one canonical event per
+    // streaming token before the writer started coalescing -- a small tail
+    // would only show the last few tokens of those sessions.
     window.electronAPI.ai
-      .getTailMessages(sessionId, 10)
+      .getTailMessages(sessionId, 100)
       .then((msgs: TranscriptViewMessage[]) => {
         if (!cancelled) {
           tailMessageCache.set(sessionId, msgs);
@@ -1203,15 +1207,13 @@ interface ColumnHeaderContextMenuProps {
 }
 
 function ColumnHeaderContextMenu({ phase, sessionIds, position, onClose, onSelectAll, onArchiveAll, onMoveAll, onRemovePhase }: ColumnHeaderContextMenuProps) {
+  const reference = useMemo(() => virtualElement(position.x, position.y), [position.x, position.y]);
   const menu = useFloatingMenu({
     placement: 'right-start',
+    reference,
     open: true,
     onOpenChange: (open) => { if (!open) onClose(); },
   });
-
-  useEffect(() => {
-    menu.refs.setPositionReference(virtualElement(position.x, position.y));
-  }, [position.x, position.y, menu.refs]);
 
   const menuItemClass = 'flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border-none rounded text-[var(--nim-text)] text-[0.8125rem] cursor-pointer text-left transition-colors duration-150 hover:bg-[var(--nim-bg-hover)] [&_svg]:shrink-0';
   const count = sessionIds.length;

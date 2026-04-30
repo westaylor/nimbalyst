@@ -69,6 +69,52 @@ describe('TranscriptWriter', () => {
       expect(event.searchableText).toBe('Here is my response');
       expect(event.payload).toEqual({ mode: 'agent' });
     });
+
+    it('coalesces consecutive chunks into one row by extending searchable_text', async () => {
+      const first = await writer.appendAssistantMessage('session-1', 'Hello');
+      const second = await writer.appendAssistantMessage('session-1', ' world');
+      const third = await writer.appendAssistantMessage('session-1', '!');
+
+      expect(second.id).toBe(first.id);
+      expect(third.id).toBe(first.id);
+      expect(third.searchableText).toBe('Hello world!');
+
+      const all = await store.getSessionEvents('session-1');
+      expect(all).toHaveLength(1);
+      expect(all[0].searchableText).toBe('Hello world!');
+    });
+
+    it('starts a new row after a non-assistant event breaks the chain', async () => {
+      await writer.appendAssistantMessage('session-1', 'Reply 1');
+      await writer.appendUserMessage('session-1', 'Follow up');
+      const second = await writer.appendAssistantMessage('session-1', 'Reply');
+      const continued = await writer.appendAssistantMessage('session-1', ' 2');
+
+      expect(continued.id).toBe(second.id);
+      const events = await store.getSessionEvents('session-1');
+      const assistant = events.filter((e) => e.eventType === 'assistant_message');
+      expect(assistant).toHaveLength(2);
+      expect(assistant[0].searchableText).toBe('Reply 1');
+      expect(assistant[1].searchableText).toBe('Reply 2');
+    });
+
+    it('does not coalesce assistant_messages that differ in mode', async () => {
+      const a = await writer.appendAssistantMessage('session-1', 'Plan: ', { mode: 'planning' });
+      const b = await writer.appendAssistantMessage('session-1', 'Doing it', { mode: 'agent' });
+
+      expect(b.id).not.toBe(a.id);
+    });
+
+    it('coalesces across writer instances by reading the tail from the store', async () => {
+      const first = await writer.appendAssistantMessage('session-1', 'Hello');
+
+      // Simulate a fresh batch (each processNewMessages call creates a new writer).
+      const writer2 = new TranscriptWriter(store, 'claude-code');
+      const continued = await writer2.appendAssistantMessage('session-1', ' world');
+
+      expect(continued.id).toBe(first.id);
+      expect(continued.searchableText).toBe('Hello world');
+    });
   });
 
   describe('appendSystemMessage', () => {

@@ -22,6 +22,13 @@ import type {
 export class TranscriptWriter {
   private seededSequence: number | null = null;
 
+  // Tracks the most recently written canonical event for the current session
+  // so streaming assistant_message chunks can be coalesced into a single row
+  // instead of producing one event per token. Loaded lazily from the store on
+  // the first call so we coalesce across batches (each `processNewMessages`
+  // call constructs a fresh writer).
+  private lastEventBySession = new Map<string, LastEventState | null>();
+
   constructor(
     private store: ITranscriptEventStore,
     private provider: string,
@@ -73,9 +80,28 @@ export class TranscriptWriter {
       createdAt?: Date;
     },
   ): Promise<TranscriptEvent> {
-    const payload: AssistantMessagePayload = {
-      mode: options?.mode ?? 'agent',
-    };
+    const mode = options?.mode ?? 'agent';
+
+    // Coalesce streaming chunks: if the previous event in this session is
+    // also an assistant_message with the same mode/subagent, append to it
+    // rather than inserting a new row. ACP and similar streaming protocols
+    // emit one chunk per token; without this we'd persist thousands of
+    // single-token events per session.
+    const last = await this.loadLastEvent(sessionId);
+    if (
+      last &&
+      last.eventType === 'assistant_message' &&
+      last.subagentId === null &&
+      last.mode === mode
+    ) {
+      const mergedText = (last.searchableText ?? '') + text;
+      await this.store.updateEventText(last.id, mergedText);
+      last.searchableText = mergedText;
+      const refreshed = await this.store.getEventById(last.id);
+      return refreshed ?? this.toTranscriptEvent(sessionId, last);
+    }
+
+    const payload: AssistantMessagePayload = { mode };
 
     return this.insertEvent(sessionId, {
       eventType: 'assistant_message',
@@ -349,7 +375,7 @@ export class TranscriptWriter {
       sequence = await this.store.getNextSequence(sessionId);
     }
 
-    return this.store.insertEvent({
+    const event = await this.store.insertEvent({
       sessionId,
       sequence,
       createdAt: fields.createdAt ?? new Date(),
@@ -362,5 +388,64 @@ export class TranscriptWriter {
       provider: this.provider,
       providerToolCallId: fields.providerToolCallId ?? null,
     });
+
+    // Refresh the coalesce-anchor for this session so the next call sees
+    // whatever we just wrote (including non-assistant events that should
+    // break the assistant_message coalesce chain).
+    this.lastEventBySession.set(sessionId, {
+      id: event.id,
+      eventType: event.eventType,
+      searchableText: event.searchableText,
+      mode: (event.payload as { mode?: 'agent' | 'planning' })?.mode,
+      subagentId: event.subagentId,
+    });
+
+    return event;
   }
+
+  private async loadLastEvent(sessionId: string): Promise<LastEventState | null> {
+    if (this.lastEventBySession.has(sessionId)) {
+      return this.lastEventBySession.get(sessionId) ?? null;
+    }
+
+    const tail = await this.store.getTailEvents(sessionId, 1);
+    const event = tail[tail.length - 1] ?? null;
+    const state: LastEventState | null = event
+      ? {
+          id: event.id,
+          eventType: event.eventType,
+          searchableText: event.searchableText,
+          mode: (event.payload as { mode?: 'agent' | 'planning' })?.mode,
+          subagentId: event.subagentId,
+        }
+      : null;
+    this.lastEventBySession.set(sessionId, state);
+    return state;
+  }
+
+  private toTranscriptEvent(sessionId: string, state: LastEventState): TranscriptEvent {
+    // Fallback used only when the store can't return the refreshed event.
+    return {
+      id: state.id,
+      sessionId,
+      sequence: 0,
+      createdAt: new Date(),
+      eventType: state.eventType,
+      searchableText: state.searchableText,
+      searchable: true,
+      payload: { mode: state.mode } as Record<string, unknown>,
+      parentEventId: null,
+      subagentId: state.subagentId,
+      provider: this.provider,
+      providerToolCallId: null,
+    };
+  }
+}
+
+interface LastEventState {
+  id: number;
+  eventType: TranscriptEventType;
+  searchableText: string | null;
+  mode: 'agent' | 'planning' | undefined;
+  subagentId: string | null;
 }

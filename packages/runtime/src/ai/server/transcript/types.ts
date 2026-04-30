@@ -219,6 +219,8 @@ export interface ITranscriptEventStore {
   updateEventPayload(id: number, payload: Record<string, unknown>): Promise<void>;
   /** Merge partial payload fields into an existing event's payload via JSONB || operator */
   mergeEventPayload(id: number, partialPayload: Record<string, unknown>): Promise<void>;
+  /** Overwrite the searchable_text of an existing event (used for streaming chunk coalescing) */
+  updateEventText(id: number, searchableText: string): Promise<void>;
   getSessionEvents(
     sessionId: string,
     options?: { eventTypes?: TranscriptEventType[]; limit?: number; offset?: number; createdAfter?: Date; createdBefore?: Date },
