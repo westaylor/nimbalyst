@@ -31,9 +31,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
+        # NOTE: deliberately omit `registry-url`. setup-node would otherwise
+        # write `_authToken=${NODE_AUTH_TOKEN}` into a generated .npmrc, which
+        # blocks npm from falling back to OIDC Trusted Publishing on publish.
 
       - name: Upgrade npm for Trusted Publishing
         run: npm install -g npm@latest
