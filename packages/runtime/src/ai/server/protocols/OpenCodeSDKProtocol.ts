@@ -17,6 +17,8 @@
  */
 
 import { ChildProcess, spawn } from 'child_process';
+import { promises as fs } from 'fs';
+import type { ChatAttachment } from '../types';
 import {
   AgentProtocol,
   ProtocolSession,
@@ -276,6 +278,76 @@ export function parseOpenCodeModelId(
 }
 
 /**
+ * Build the `parts` array for an OpenCode prompt body from the user's message
+ * text plus any Nimbalyst attachments (paste-as-file, drag/drop, etc).
+ *
+ * Attachments live on disk in app userData (outside the workspace), so they
+ * cannot be reached by OpenCode's filesystem tools. We have to inline the
+ * content into the prompt instead:
+ *  - documents: read as UTF-8 and append a text part wrapped with the original
+ *    filename so the agent can connect it to the `@filename` reference the
+ *    renderer already inserted into the message text.
+ *  - images / pdfs: read as a base64 `data:` URL and append as a `file` part.
+ *
+ * If a file can't be read we surface a short note in the prompt so the agent
+ * sees a real explanation instead of hunting for the missing file on disk.
+ */
+export async function buildPromptParts(
+  content: string,
+  attachments?: ChatAttachment[]
+): Promise<Array<{ type: 'text'; text: string } | { type: 'file'; mime: string; filename?: string; url: string }>> {
+  const parts: Array<{ type: 'text'; text: string } | { type: 'file'; mime: string; filename?: string; url: string }> =
+    [{ type: 'text', text: content }];
+
+  if (!attachments || attachments.length === 0) {
+    return parts;
+  }
+
+  for (const attachment of attachments) {
+    if (!attachment.filepath) continue;
+
+    if (attachment.type === 'document') {
+      try {
+        const text = await fs.readFile(attachment.filepath, 'utf-8');
+        parts.push({
+          type: 'text',
+          text: `<file name="${attachment.filename}">\n${text}\n</file>`,
+        });
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        parts.push({
+          type: 'text',
+          text: `<file name="${attachment.filename}" error="failed to read attachment: ${errMsg}" />`,
+        });
+      }
+      continue;
+    }
+
+    if (attachment.type === 'image' || attachment.type === 'pdf') {
+      try {
+        const data = await fs.readFile(attachment.filepath);
+        const base64 = data.toString('base64');
+        const mime = attachment.mimeType || (attachment.type === 'pdf' ? 'application/pdf' : 'application/octet-stream');
+        parts.push({
+          type: 'file',
+          mime,
+          filename: attachment.filename,
+          url: `data:${mime};base64,${base64}`,
+        });
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        parts.push({
+          type: 'text',
+          text: `<file name="${attachment.filename}" error="failed to read attachment: ${errMsg}" />`,
+        });
+      }
+    }
+  }
+
+  return parts;
+}
+
+/**
  * OpenCode SDK Protocol Adapter
  *
  * Provides a normalized interface to the OpenCode SDK, handling:
@@ -459,8 +531,9 @@ export class OpenCodeSDKProtocol implements AgentProtocol {
       // Send the prompt (non-blocking -- events arrive via SSE).
       // The `model` field is optional -- when omitted, OpenCode falls back to
       // the default model from its config file (~/.config/opencode/opencode.json).
+      const parts = await buildPromptParts(message.content, message.attachments);
       const promptBody: Record<string, unknown> = {
-        parts: [{ type: 'text', text: message.content }],
+        parts,
       };
       if (modelSelector) {
         promptBody.model = modelSelector;

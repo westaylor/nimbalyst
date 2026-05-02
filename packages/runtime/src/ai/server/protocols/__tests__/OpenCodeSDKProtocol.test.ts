@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { OpenCodeSDKProtocol, OpenCodeClientLike, OpenCodeSSEEvent } from '../OpenCodeSDKProtocol';
 import { EventEmitter } from 'events';
+import type { ChatAttachment } from '../../types';
 
 // Mock child_process.spawn to avoid actually launching opencode
 vi.mock('child_process', () => ({
@@ -359,5 +363,123 @@ describe('OpenCodeSDKProtocol', () => {
         },
       })
     );
+  });
+
+  it('inlines a pasted-text document attachment as a second text part', async () => {
+    const sseEvents: OpenCodeSSEEvent[] = [
+      { type: 'session.idle', properties: { sessionID: 'oc-session-1' } },
+    ];
+
+    const tmpFile = join(tmpdir(), `nimbalyst-opencode-paste-${Date.now()}.txt`);
+    await fs.writeFile(tmpFile, 'pasted body content', 'utf-8');
+
+    const attachment: ChatAttachment = {
+      id: 'att-1',
+      filename: 'pasted-text-2026-05-01.txt',
+      filepath: tmpFile,
+      mimeType: 'text/plain',
+      size: 19,
+      type: 'document',
+      addedAt: Date.now(),
+    };
+
+    try {
+      const { loadSdkModule, promptFn } = createMockSdkModule(sseEvents);
+      const protocol = new OpenCodeSDKProtocol(loadSdkModule);
+      const session = await protocol.createSession({ workspacePath: '/tmp/test' });
+
+      for await (const _event of protocol.sendMessage(session, {
+        content: 'look at @pasted-text-2026-05-01.txt',
+        attachments: [attachment],
+      })) {
+        // drain
+      }
+
+      const callBody = ((promptFn.mock.calls[0] as unknown as Array<{ body: { parts: Array<{ type: string; text?: string }> } }>)[0]).body;
+      expect(callBody.parts).toHaveLength(2);
+      expect(callBody.parts[0]).toEqual({ type: 'text', text: 'look at @pasted-text-2026-05-01.txt' });
+      expect(callBody.parts[1].type).toBe('text');
+      expect(callBody.parts[1].text).toContain('<file name="pasted-text-2026-05-01.txt">');
+      expect(callBody.parts[1].text).toContain('pasted body content');
+    } finally {
+      await fs.unlink(tmpFile).catch(() => {});
+    }
+  });
+
+  it('inlines an image attachment as a base64 data: file part', async () => {
+    const sseEvents: OpenCodeSSEEvent[] = [
+      { type: 'session.idle', properties: { sessionID: 'oc-session-1' } },
+    ];
+
+    const tmpFile = join(tmpdir(), `nimbalyst-opencode-paste-${Date.now()}.png`);
+    const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    await fs.writeFile(tmpFile, pngBytes);
+
+    const attachment: ChatAttachment = {
+      id: 'att-img-1',
+      filename: 'pasted-image.png',
+      filepath: tmpFile,
+      mimeType: 'image/png',
+      size: pngBytes.length,
+      type: 'image',
+      addedAt: Date.now(),
+    };
+
+    try {
+      const { loadSdkModule, promptFn } = createMockSdkModule(sseEvents);
+      const protocol = new OpenCodeSDKProtocol(loadSdkModule);
+      const session = await protocol.createSession({ workspacePath: '/tmp/test' });
+
+      for await (const _event of protocol.sendMessage(session, {
+        content: 'see @pasted-image.png',
+        attachments: [attachment],
+      })) {
+        // drain
+      }
+
+      const callBody = ((promptFn.mock.calls[0] as unknown as Array<{ body: { parts: Array<Record<string, unknown>> } }>)[0]).body;
+      expect(callBody.parts).toHaveLength(2);
+      expect(callBody.parts[1]).toEqual({
+        type: 'file',
+        mime: 'image/png',
+        filename: 'pasted-image.png',
+        url: `data:image/png;base64,${pngBytes.toString('base64')}`,
+      });
+    } finally {
+      await fs.unlink(tmpFile).catch(() => {});
+    }
+  });
+
+  it('falls back to an inline error note when an attachment cannot be read', async () => {
+    const sseEvents: OpenCodeSSEEvent[] = [
+      { type: 'session.idle', properties: { sessionID: 'oc-session-1' } },
+    ];
+
+    const attachment: ChatAttachment = {
+      id: 'att-missing',
+      filename: 'missing.txt',
+      filepath: join(tmpdir(), `nimbalyst-opencode-missing-${Date.now()}.txt`),
+      mimeType: 'text/plain',
+      size: 0,
+      type: 'document',
+      addedAt: Date.now(),
+    };
+
+    const { loadSdkModule, promptFn } = createMockSdkModule(sseEvents);
+    const protocol = new OpenCodeSDKProtocol(loadSdkModule);
+    const session = await protocol.createSession({ workspacePath: '/tmp/test' });
+
+    for await (const _event of protocol.sendMessage(session, {
+      content: 'see @missing.txt',
+      attachments: [attachment],
+    })) {
+      // drain
+    }
+
+    const callBody = ((promptFn.mock.calls[0] as unknown as Array<{ body: { parts: Array<{ type: string; text?: string }> } }>)[0]).body;
+    expect(callBody.parts).toHaveLength(2);
+    expect(callBody.parts[1].type).toBe('text');
+    expect(callBody.parts[1].text).toContain('<file name="missing.txt"');
+    expect(callBody.parts[1].text).toContain('failed to read attachment');
   });
 });
