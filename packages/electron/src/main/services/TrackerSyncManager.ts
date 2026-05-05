@@ -88,11 +88,18 @@ function buildPayloadsFromRows(
       linkedCommitSha: data.linkedCommitSha,
       documentId: data.documentId,
       content: row.content != null ? row.content : undefined,
+      // Thread persisted per-field LWW timestamps through to the upload payload.
+      // Without this, trackerItemToRecord stamps every field with Date.now(),
+      // making field-level merge non-deterministic for items uploaded from PGLite.
+      fieldUpdatedAt: data._fieldUpdatedAt || undefined,
     };
     const itemKeys = new Set(Object.keys(item));
     const extra: Record<string, any> = {};
     if (data) {
       for (const [k, v] of Object.entries(data)) {
+        // Skip _fieldUpdatedAt: it is consumed via item.fieldUpdatedAt above
+        // and is not a user field.
+        if (k === '_fieldUpdatedAt') continue;
         if (!itemKeys.has(k) && v !== undefined) extra[k] = v;
       }
     }
