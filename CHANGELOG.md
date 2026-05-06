@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Changes to existing functionality go here -->
 
 ### Fixed
+- Default `CLAUDE_CODE_ENTRYPOINT` to `'cli'` so OAuth subscription traffic (Pro and Max) is not classified as third-party by Anthropic's backend. The bundled `@anthropic-ai/claude-agent-sdk` defaults SDK consumers to `'sdk-ts'` when the env var is unset, which was sending Nimbalyst into a deprioritized throttle lane that fired before the user's documented usage quota was reached, especially when the official `claude` CLI was running concurrently under the same OAuth credentials. One-line conditional override in `sdkOptionsBuilder.ts`, conditional spread shape so any caller who explicitly sets the env var (e.g., for hook-policy enforcement per anthropics/claude-code#54541, or debugging) keeps their value. Closes #174.
 - Open a workspace whose `.git` repo has zero commits yet without spamming a multi-line stack trace into `main.log`. `GitRefWatcher.start` was letting the "fatal: your current branch X does not have any commits yet" error from `simple-git`'s `log()` call escape into the outer catch as `[GitRefWatcher] Failed to start watching: ...`. The pre-flight branch + HEAD lookup is now wrapped in a narrow try/catch that pattern-matches that exact error, logs a one-line info message, and returns cleanly. All other errors still surface to the outer catch unchanged. Mirrors the existing detached-HEAD short-circuit. Adds unit tests for the empty-repo, unrelated-error, and detached-HEAD paths.
 
 ### Removed
