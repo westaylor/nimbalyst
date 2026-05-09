@@ -1282,7 +1282,7 @@ export async function registerSessionHandlers() {
     safeHandle('messages:respond-to-prompt', async (event, params: {
         sessionId: string;
         promptId: string;
-        promptType: 'permission_request' | 'ask_user_question_request' | 'exit_plan_mode_request' | 'git_commit_proposal_request';
+        promptType: 'permission_request' | 'ask_user_question_request' | 'exit_plan_mode_request' | 'git_commit_proposal_request' | 'request_user_input_request';
         response: any;
         respondedBy: 'desktop' | 'mobile';
     }) => {
@@ -1334,6 +1334,15 @@ export async function registerSessionHandlers() {
                     error: response.error,
                     filesCommitted: response.filesCommitted,
                     commitMessage: response.commitMessage,
+                    respondedAt: timestamp,
+                    respondedBy,
+                };
+            } else if (promptType === 'request_user_input_request') {
+                responseContent = {
+                    type: 'request_user_input_response',
+                    promptId: canonicalPromptId,
+                    answers: response.answers || {},
+                    cancelled: response.cancelled === true,
                     respondedAt: timestamp,
                     respondedBy,
                 };
@@ -1418,6 +1427,29 @@ export async function registerSessionHandlers() {
                         console.warn('[SessionHandlers] Failed to persist synthetic Codex commit completion event:', error);
                     }
                 }
+            }
+
+            // For request_user_input, emit to the session-scoped MCP waiter channel
+            // so the MCP handler resolves immediately. (The DB row above is the
+            // durable fallback for cases where the MCP transport drops.)
+            if (promptType === 'request_user_input_request') {
+                const { ipcMain } = await import('electron');
+                const { getRequestUserInputResponseChannel } = await import('../mcp/tools/interactiveToolHandlers');
+                const channel = getRequestUserInputResponseChannel(sessionId, canonicalPromptId);
+                if (ipcMain.listenerCount(channel) > 0) {
+                    ipcMain.emit(channel, null, {
+                        answers: response.answers,
+                        cancelled: response.cancelled === true,
+                        respondedBy,
+                    });
+                } else {
+                    console.warn(
+                        `[SessionHandlers] No MCP waiter for RequestUserInput on channel: ${channel}. ` +
+                        `Response was persisted to DB; the handler may have already resolved or the subprocess exited.`,
+                    );
+                }
+                event.sender.send('ai:requestUserInputResolved', { sessionId, promptId: canonicalPromptId });
+                TrayManager.getInstance().onPromptResolved(sessionId);
             }
 
             // For git_commit_proposal, emit to the session-scoped MCP waiter channel

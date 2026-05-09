@@ -1206,6 +1206,38 @@ export const SessionTranscript = forwardRef<SessionTranscriptRef, SessionTranscr
         posthog?.capture('ask_user_question_cancelled');
       },
 
+      // RequestUserInput operations - durable prompt path
+      requestUserInputSubmit: async (promptId: string, answers) => {
+        await window.electronAPI.invoke('messages:respond-to-prompt', {
+          sessionId,
+          promptId,
+          promptType: 'request_user_input_request' as const,
+          response: { answers, cancelled: false },
+          respondedBy: 'desktop' as const,
+        });
+        // Counts of each field type, no PII.
+        const fieldTypeCounts: Record<string, number> = {};
+        for (const a of Object.values(answers)) {
+          fieldTypeCounts[a.type] = (fieldTypeCounts[a.type] ?? 0) + 1;
+        }
+        posthog?.capture('request_user_input_answered', {
+          numFields: Object.keys(answers).length,
+          fieldTypeCounts,
+        });
+        refreshPendingPrompts(sessionId);
+      },
+      requestUserInputCancel: async (promptId: string) => {
+        await window.electronAPI.invoke('messages:respond-to-prompt', {
+          sessionId,
+          promptId,
+          promptType: 'request_user_input_request' as const,
+          response: { answers: {}, cancelled: true },
+          respondedBy: 'desktop' as const,
+        });
+        posthog?.capture('request_user_input_cancelled');
+        refreshPendingPrompts(sessionId);
+      },
+
       // ExitPlanMode operations
       exitPlanModeApprove: async (requestId: string) => {
         await handleExitPlanModeApprove(requestId, sessionId);

@@ -759,6 +759,8 @@ describe('AskUserQuestionWidget', () => {
       worktreeId: null,
       askUserQuestionSubmit: vi.fn().mockResolvedValue(undefined),
       askUserQuestionCancel: vi.fn().mockResolvedValue(undefined),
+      requestUserInputSubmit: vi.fn().mockResolvedValue(undefined),
+      requestUserInputCancel: vi.fn().mockResolvedValue(undefined),
       exitPlanModeApprove: vi.fn().mockResolvedValue(undefined),
       exitPlanModeStartNewSession: vi.fn().mockResolvedValue(undefined),
       exitPlanModeDeny: vi.fn().mockResolvedValue(undefined),

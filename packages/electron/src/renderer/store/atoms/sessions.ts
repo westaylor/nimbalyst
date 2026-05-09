@@ -194,7 +194,7 @@ export const sessionPromptAdditionsAtom = atomFamily((_sessionId: string) =>
 /**
  * Pending interactive prompt from the database.
  * Represents one of: permission_request, ask_user_question_request,
- * exit_plan_mode_request, or git_commit_proposal_request.
+ * exit_plan_mode_request, git_commit_proposal_request, or request_user_input_request.
  */
 export interface PendingPrompt {
   id: string;
@@ -203,7 +203,8 @@ export interface PendingPrompt {
     | 'permission_request'
     | 'ask_user_question_request'
     | 'exit_plan_mode_request'
-    | 'git_commit_proposal_request';
+    | 'git_commit_proposal_request'
+    | 'request_user_input_request';
   promptId: string;  // requestId or questionId
   data: any;         // The full prompt content
   createdAt: number;
@@ -229,7 +230,18 @@ export const sessionPendingPromptsRefreshAtom = atomFamily((_sessionId: string) 
  * Action atom to refresh pending prompts for a session.
  * Pending prompts are now derived from canonical transcript events, not ai_agent_messages.
  */
-const INTERACTIVE_PROMPT_TOOLS = new Set(['AskUserQuestion', 'ToolPermission', 'ExitPlanMode', 'GitCommitProposal']);
+const INTERACTIVE_PROMPT_TOOLS = new Set([
+  'AskUserQuestion',
+  'ToolPermission',
+  'ExitPlanMode',
+  'GitCommitProposal',
+  // Wire-name for the generic structured-input prompt. NOT `RequestUserInput` --
+  // that snake_cases to Codex's built-in `request_user_input`, which is gated to
+  // Plan mode and gets refused in Default mode. `RequestUserInput` is kept here
+  // so older recorded sessions still detect the pending state.
+  'PromptForUserInput',
+  'RequestUserInput',
+]);
 
 // MCP tools arrive as `mcp__<server>__<toolName>` (server name may contain dashes).
 // Match the bare name first; if not found, peel off the MCP prefix and recheck.
@@ -279,7 +291,7 @@ export const respondToPromptAtom = atom(
   async (get, set, params: {
     sessionId: string;
     promptId: string;
-    promptType: 'permission_request' | 'ask_user_question_request' | 'exit_plan_mode_request';
+    promptType: 'permission_request' | 'ask_user_question_request' | 'exit_plan_mode_request' | 'request_user_input_request';
     response: any;
   }) => {
     const { sessionId, promptId, promptType, response } = params;

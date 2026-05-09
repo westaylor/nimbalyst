@@ -46,9 +46,19 @@ interface PromptPayload {
  * All interactive prompts use this structure.
  */
 interface PromptResponsePayload {
-  promptType: 'ask_user_question' | 'exit_plan_mode' | 'tool_permission' | 'git_commit';
+  promptType: 'ask_user_question' | 'exit_plan_mode' | 'tool_permission' | 'git_commit' | 'request_user_input';
   promptId: string;
-  response: AskUserQuestionResponse | ExitPlanModeResponse | ToolPermissionResponse | GitCommitResponse;
+  response:
+    | AskUserQuestionResponse
+    | ExitPlanModeResponse
+    | ToolPermissionResponse
+    | GitCommitResponse
+    | RequestUserInputResponse;
+}
+
+interface RequestUserInputResponse {
+  answers: Record<string, unknown>;
+  cancelled?: boolean;
 }
 
 interface AskUserQuestionResponse {
@@ -208,9 +218,78 @@ function handlePromptResponse(
       break;
     }
 
+    case 'request_user_input': {
+      const response = payload.response as RequestUserInputResponse;
+      handleRequestUserInputResponse(sessionId, payload.promptId, response);
+      break;
+    }
+
     default:
       log.warn('Unknown prompt type:', payload.promptType);
   }
+}
+
+/**
+ * Handle RequestUserInput response from mobile.
+ *
+ * The desktop MCP handler is waiting on a session-scoped IPC channel + a
+ * DB-polling fallback. We try the IPC channel first (matches the MCP server's
+ * fast path) and write a `request_user_input_response` row to the DB so the
+ * polling fallback resolves even if no IPC waiter is registered (e.g., the
+ * MCP transport dropped or the desktop wasn't open when the prompt was
+ * created). Then notify all windows to clear the pending UI.
+ */
+function handleRequestUserInputResponse(
+  sessionId: string,
+  promptId: string,
+  response: RequestUserInputResponse,
+): void {
+  log.info(
+    `[Mobile] RequestUserInput response: promptId=${promptId}, sessionId=${sessionId}, cancelled=${response.cancelled === true}`,
+  );
+
+  const { ipcMain } = require('electron');
+
+  import('../../mcp/tools/interactiveToolHandlers').then(({ getRequestUserInputResponseChannel }) => {
+    const channel = getRequestUserInputResponseChannel(sessionId, promptId);
+    const hasWaiter = ipcMain.listenerCount(channel) > 0;
+    if (hasWaiter) {
+      log.info(`[Mobile] Emitting on RequestUserInput channel: ${channel}`);
+      ipcMain.emit(channel, {}, {
+        answers: response.cancelled ? {} : (response.answers ?? {}),
+        cancelled: response.cancelled === true,
+        respondedBy: 'mobile',
+      });
+    } else {
+      log.info(`[Mobile] No MCP waiter for RequestUserInput on ${channel} -- relying on DB poll`);
+    }
+  }).catch((err) => {
+    log.warn('[Mobile] Failed to import interactiveToolHandlers:', err);
+  });
+
+  // DB fallback: write a response row so the MCP server's polling loop resolves.
+  import('@nimbalyst/runtime/storage/repositories/AgentMessagesRepository').then(({ AgentMessagesRepository }) => {
+    AgentMessagesRepository.create({
+      sessionId,
+      source: 'claude-code',
+      direction: 'output' as const,
+      createdAt: new Date(),
+      content: JSON.stringify({
+        type: 'request_user_input_response',
+        promptId,
+        answers: response.cancelled ? {} : (response.answers ?? {}),
+        cancelled: response.cancelled === true,
+        respondedBy: 'mobile',
+        respondedAt: Date.now(),
+      }),
+    }).catch((err) => {
+      log.warn(`[Mobile] Failed to persist RequestUserInput response: ${err}`);
+    });
+  });
+
+  // Notify all windows to clear the pending UI.
+  notifyAllWindows('ai:requestUserInputResolved', { sessionId, promptId });
+  TrayManager.getInstance().onPromptResolved(sessionId);
 }
 
 /**

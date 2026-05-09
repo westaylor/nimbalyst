@@ -657,6 +657,40 @@ export function initSessionStateListeners(): () => void {
   };
 
   /**
+   * Handle RequestUserInput events globally.
+   * Push prompt data into the atom so voice mode can read it (and so the
+   * sidebar pending indicator lights up). The widget itself reads from
+   * `toolCall.arguments` -- this atom is for cross-cutting consumers.
+   */
+  const handleRequestUserInput = (data: { sessionId: string; promptId: string; args: any }) => {
+    const { sessionId, promptId, args } = data;
+    if (!sessionId || !promptId) return;
+    store.set(sessionHasPendingInteractivePromptAtom(sessionId), true);
+    const prompt: PendingPrompt = {
+      id: promptId,
+      sessionId,
+      promptType: 'request_user_input_request',
+      promptId,
+      data: { type: 'request_user_input_request', promptId, args },
+      createdAt: Date.now(),
+    };
+    const current = store.get(sessionPendingPromptsAtom(sessionId));
+    store.set(sessionPendingPromptsAtom(sessionId), [...current, prompt]);
+  };
+
+  /**
+   * Handle RequestUserInput resolved events globally.
+   * Clears pending interactive prompt indicator.
+   */
+  const handleRequestUserInputResolved = (data: { sessionId: string; promptId: string }) => {
+    const { sessionId, promptId } = data;
+    if (!sessionId) return;
+    store.set(sessionHasPendingInteractivePromptAtom(sessionId), false);
+    const current = store.get(sessionPendingPromptsAtom(sessionId));
+    store.set(sessionPendingPromptsAtom(sessionId), current.filter(p => p.promptId !== promptId));
+  };
+
+  /**
    * Handle notification click events.
    * Switches to the session that was clicked in the OS notification.
    * If the session is a child of a workstream, selects the parent instead.
@@ -793,6 +827,8 @@ export function initSessionStateListeners(): () => void {
   let cleanupToolPermissionResolved: (() => void) | undefined;
   let cleanupGitCommitProposal: (() => void) | undefined;
   let cleanupGitCommitProposalResolved: (() => void) | undefined;
+  let cleanupRequestUserInput: (() => void) | undefined;
+  let cleanupRequestUserInputResolved: (() => void) | undefined;
   let cleanupNotificationClicked: (() => void) | undefined;
   let cleanupSyncReadState: (() => void) | undefined;
   let cleanupSyncDraftInput: (() => void) | undefined;
@@ -812,6 +848,8 @@ export function initSessionStateListeners(): () => void {
     cleanupToolPermissionResolved = window.electronAPI.on('ai:toolPermissionResolved', handleToolPermissionResolved);
     cleanupGitCommitProposal = window.electronAPI.on('ai:gitCommitProposal', handleGitCommitProposal);
     cleanupGitCommitProposalResolved = window.electronAPI.on('ai:gitCommitProposalResolved', handleGitCommitProposalResolved);
+    cleanupRequestUserInput = window.electronAPI.on('ai:requestUserInput', handleRequestUserInput);
+    cleanupRequestUserInputResolved = window.electronAPI.on('ai:requestUserInputResolved', handleRequestUserInputResolved);
     cleanupNotificationClicked = window.electronAPI.on('notification-clicked', handleNotificationClicked);
     cleanupSyncReadState = window.electronAPI.on('sessions:sync-read-state', handleSyncReadState);
     cleanupSyncDraftInput = window.electronAPI.on('sessions:sync-draft-input', handleSyncDraftInput);
@@ -853,6 +891,8 @@ export function initSessionStateListeners(): () => void {
     cleanupToolPermissionResolved?.();
     cleanupGitCommitProposal?.();
     cleanupGitCommitProposalResolved?.();
+    cleanupRequestUserInput?.();
+    cleanupRequestUserInputResolved?.();
     cleanupNotificationClicked?.();
     cleanupSyncReadState?.();
     cleanupSyncDraftInput?.();
