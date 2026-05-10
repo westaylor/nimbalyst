@@ -137,6 +137,50 @@ Review the issue, isolate the root cause, and prepare a fix plan.
     expect(fs.existsSync(path.join(generatedPluginPath, 'commands', 'repair.md'))).toBe(true);
   });
 
+  it('extracts a fallback description from Claude command bodies before exporting to Codex skills', async () => {
+    const commandsDir = path.join(workspacePath, '.claude', 'commands');
+    fs.mkdirSync(commandsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(commandsDir, 'design.md'),
+      `---
+packageVersion: 1.0.0
+packageId: core
+---
+
+# /design Command
+
+Create a new plan document for tracking work.
+
+## Workflow
+
+Inspect the codebase, write the plan, and capture open questions.
+`,
+      'utf-8',
+    );
+
+    const service = new AgentWorkflowService(workspacePath, {
+      userHomePath,
+      extensionDirectoriesLoader: async () => [],
+      nativeClaudePluginPathsLoader: async () => [],
+      releaseChannelLoader: () => 'stable',
+    });
+
+    const codexEntries = await service.listEntries({ provider: 'openai-codex' });
+    const designEntry = codexEntries.find(entry => entry.name === 'design');
+    expect(designEntry?.description).toBe('Create a new plan document for tracking work.');
+
+    const codexSkillPath = path.join(
+      workspacePath,
+      '.agents',
+      'skills',
+      '.nimbalyst-generated',
+      'design',
+      'SKILL.md',
+    );
+    const codexSkill = fs.readFileSync(codexSkillPath, 'utf-8');
+    expect(codexSkill).toContain('description: "Create a new plan document for tracking work."');
+  });
+
   it('imports legacy Claude plugins into the registry and exports command aliases for Codex', async () => {
     const pluginRoot = path.join(workspacePath, 'legacy-plugin');
     fs.mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true });
