@@ -53,6 +53,7 @@ import {
 } from './atoms/sessionActivity';
 import type { TranscriptEvent } from '@nimbalyst/runtime/ai/server/transcript/types';
 import { TranscriptStreamAccumulator } from './transcriptStreamAccumulator';
+import { resolveOwnedWorkspacePath } from '../../shared/sessionWorkspaceRouting';
 
 /**
  * Per-session accumulator of canonical events received via IPC.
@@ -212,14 +213,19 @@ export function initSessionStateListeners(): () => void {
 
     const registry = store.get(sessionRegistryAtom);
     const sessionMeta = registry.get(sessionId);
-    const ownedWorkspacePath = eventWorkspacePath || sessionMeta?.workspaceId || null;
+    const sessionWorkspacePath = sessionMeta?.workspaceId || null;
+    const ownedWorkspacePath = resolveOwnedWorkspacePath({
+      eventWorkspacePath,
+      sessionWorkspacePath,
+    });
 
     // The main-process subscription is scoped to the set of workspace paths
-    // this window actually hosts (single project or rail-warm), so any event
-    // that reaches us here is intended for us. We don't re-filter by
-    // currentWorkspacePath — that would drop lifecycle events for sessions
-    // in inactive rail projects, leaving the UI stuck on "Thinking…" after a
-    // session completed while its project was hidden.
+    // this window actually hosts (single project or rail-warm) and does the
+    // worktree-aware routing (see SessionStateHandlers), so any event that
+    // reaches us here is intended for us. We don't re-filter by the visible
+    // project — that would drop lifecycle events for sessions in inactive
+    // rail projects, leaving the UI stuck on "Thinking…" after a session
+    // completed while its project was hidden.
     //
     // We still require an owned workspacePath (event-carried or registry
     // hit). Falling back to the active project's path would silently process
@@ -410,10 +416,11 @@ export function initSessionStateListeners(): () => void {
     const registry = store.get(sessionRegistryAtom);
     const sessionMeta = registry.get(sessionId);
     // Prefer the workspacePath sent by main — it is the session's owning
-    // path, which the registry only knows about while that project is the
-    // active one. After a rail switch the registry has been replaced with
-    // the new project's sessions and `sessionMeta?.workspaceId` is
-    // undefined, so legacy fallback to currentWorkspacePath would route
+    // path (resolved against the worktree's parent workspace_id by the main
+    // process), which the registry only knows about while that project is
+    // the active one. After a rail switch the registry has been replaced
+    // with the new project's sessions and `sessionMeta?.workspaceId` is
+    // undefined, so a legacy fallback to the visible project would route
     // the reload to the wrong workspace.
     //
     // Multi-project rail: any event we receive is intended for a workspace
