@@ -744,6 +744,7 @@ async function openFileWithWorkspaceDetection(filePath: string): Promise<void> {
         } else {
             // Create new workspace window for this workspace
             workspaceWindow = createWindow(false, true, workspacePath);
+            updateTrackerSchemaWorkspace(workspacePath);
             workspaceWindow.once('ready-to-show', async () => {
                 workspaceWindow!.show();
                 // Window state is already set by createWindow with workspace path
@@ -765,6 +766,7 @@ async function openFileWithWorkspaceDetection(filePath: string): Promise<void> {
                 logger.main.info(`Opening suggested workspace: ${suggestedWorkspace}`);
                 addToRecentItems('workspaces', suggestedWorkspace, path.basename(suggestedWorkspace));
                 const newWindow = createWindow(false, true, suggestedWorkspace);
+                updateTrackerSchemaWorkspace(suggestedWorkspace);
                 newWindow.once('ready-to-show', async () => {
                     newWindow.show();
                     await loadFileIntoWindow(newWindow, filePath);
@@ -775,6 +777,7 @@ async function openFileWithWorkspaceDetection(filePath: string): Promise<void> {
                 logger.main.info(`Using file directory as workspace: ${fileDir}`);
                 addToRecentItems('workspaces', fileDir, path.basename(fileDir));
                 const newWindow = createWindow(false, true, fileDir);
+                updateTrackerSchemaWorkspace(fileDir);
                 newWindow.once('ready-to-show', async () => {
                     newWindow.show();
                     await loadFileIntoWindow(newWindow, filePath);
