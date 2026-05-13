@@ -14,6 +14,9 @@
  */
 
 import { execFileSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { BaseAgentProvider } from './BaseAgentProvider';
 import { buildUserMessageAddition } from './documentContextUtils';
 import { buildClaudeCodeSystemPrompt } from '../../prompt';
@@ -37,6 +40,61 @@ import { TranscriptMigrationRepository } from '../../../storage/repositories/Tra
 
 interface CopilotCLIProviderDeps {
   protocol?: CopilotACPProtocol;
+}
+
+function splitPathEntries(pathValue: string | undefined): string[] {
+  if (!pathValue) return [];
+  return pathValue
+    .split(path.delimiter)
+    .map((entry) => entry.trim().replace(/^"(.*)"$/, '$1'))
+    .filter(Boolean);
+}
+
+function findExecutableInPathEntries(
+  executableNames: string[],
+  pathValue: string | undefined
+): string | undefined {
+  for (const entry of splitPathEntries(pathValue)) {
+    for (const executableName of executableNames) {
+      const candidate = path.join(entry, executableName);
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
+}
+
+function getSystemCopilotExecutableCandidates(pathValue?: string): string[] {
+  const platform = process.platform;
+  const homeDir = os.homedir();
+  const pathModule = platform === 'win32' ? path.win32 : path;
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+  const addCandidate = (candidate: string | undefined) => {
+    if (!candidate) return;
+    const normalized = pathModule.normalize(candidate);
+    if (seen.has(normalized)) return;
+    seen.add(normalized);
+    candidates.push(candidate);
+  };
+
+  if (platform === 'win32') {
+    const appData = process.env.APPDATA || path.win32.join(homeDir, 'AppData', 'Roaming');
+    addCandidate(path.win32.join(appData, 'npm', 'copilot.cmd'));
+    addCandidate(path.win32.join(homeDir, 'AppData', 'Roaming', 'npm', 'copilot.cmd'));
+    addCandidate(findExecutableInPathEntries(['copilot.cmd', 'copilot.exe'], pathValue ?? process.env.PATH));
+    addCandidate('copilot');
+    return candidates;
+  }
+
+  addCandidate(path.join(homeDir, '.local', 'bin', 'copilot'));
+  addCandidate(path.join(homeDir, '.npm-global', 'bin', 'copilot'));
+  addCandidate('/usr/local/bin/copilot');
+  addCandidate('/opt/homebrew/bin/copilot');
+  addCandidate(findExecutableInPathEntries(['copilot'], pathValue ?? process.env.PATH));
+  addCandidate('copilot');
+  return candidates;
 }
 
 export class CopilotCLIProvider extends BaseAgentProvider {
@@ -132,6 +190,23 @@ export class CopilotCLIProvider extends BaseAgentProvider {
 
   public static setCopilotPathLoader(loader: (() => string | null) | null): void {
     CopilotCLIProvider.copilotPathLoader = loader;
+  }
+
+  private static resolveCopilotExecutableForRuntime(pathValue?: string): string | undefined {
+    if (CopilotCLIProvider.copilotPathLoader) {
+      const customPath = CopilotCLIProvider.copilotPathLoader();
+      if (customPath) {
+        return customPath;
+      }
+    }
+
+    for (const candidate of getSystemCopilotExecutableCandidates(pathValue)) {
+      if (candidate === 'copilot' || fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return undefined;
   }
 
   // --- Model discovery ---
@@ -397,7 +472,9 @@ export class CopilotCLIProvider extends BaseAgentProvider {
   }
 
   private static isCopilotInstalled(): boolean {
-    const command = CopilotCLIProvider.copilotPathLoader?.() || 'copilot';
+    const command = CopilotCLIProvider.resolveCopilotExecutableForRuntime(
+      CopilotCLIProvider.enhancedPathLoader?.() || process.env.PATH
+    ) || 'copilot';
     // Use the enhanced PATH (Homebrew, npm-global, etc.) so the runtime
     // check matches what the settings panel sees. A packaged macOS app
     // launched from Finder/Dock has only /usr/bin:/bin:/usr/sbin:/sbin in
@@ -422,9 +499,11 @@ export class CopilotCLIProvider extends BaseAgentProvider {
   }
 
   private configureProtocol(): void {
-    const customPath = CopilotCLIProvider.copilotPathLoader?.();
-    if (customPath) {
-      this.protocol.setCopilotPath(customPath);
+    const resolvedPath = CopilotCLIProvider.resolveCopilotExecutableForRuntime(
+      CopilotCLIProvider.enhancedPathLoader?.() || process.env.PATH
+    );
+    if (resolvedPath) {
+      this.protocol.setCopilotPath(resolvedPath);
     }
     // Default: `copilot --acp --stdio` (from @github/copilot npm package)
 
