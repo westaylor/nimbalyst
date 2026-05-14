@@ -1583,6 +1583,50 @@ export async function registerSessionHandlers() {
         const viewModel = TranscriptProjector.project(tailEvents);
         return viewModel.messages;
     });
+
+    // DEV/TESTING ONLY: Force a single session's canonical events to be
+    // dropped and reparsed from raw messages. Used when iterating on parser
+    // fixes to verify against an existing session WITHOUT bumping
+    // TranscriptTransformer.CURRENT_VERSION (which would reparse every
+    // session in the database).
+    //
+    // Destructive (drops and rewrites canonical events) -- gated on dev mode
+    // so it cannot be invoked from a packaged build.
+    safeHandle('transcript:force-reparse-session', async (_event, sessionId: string) => {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('transcript:force-reparse-session is dev-only');
+        }
+        if (!sessionId) {
+            throw new Error('sessionId is required');
+        }
+        if (!TranscriptMigrationRepository.hasService()) {
+            throw new Error('TranscriptMigrationService not initialized');
+        }
+
+        const session = await AISessionsRepository.get(sessionId);
+        if (!session) {
+            throw new Error(`Session ${sessionId} not found`);
+        }
+
+        const provider = session.provider ?? 'unknown';
+        const migrationService = TranscriptMigrationRepository.getService();
+        await migrationService.forceReparseSession(sessionId, provider);
+
+        // Nudge any open renderer view of this session to reload from DB so the
+        // user sees the reparse result without manually switching sessions. The
+        // existing ai:message-logged listener routes through the throttled
+        // reload pipeline.
+        for (const window of BrowserWindow.getAllWindows()) {
+            if (!window.isDestroyed()) {
+                window.webContents.send('ai:message-logged', {
+                    sessionId,
+                    direction: 'output',
+                });
+            }
+        }
+
+        return { success: true, sessionId, provider };
+    });
 }
 
 export { sessionManager };

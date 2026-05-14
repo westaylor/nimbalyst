@@ -192,6 +192,25 @@ export class TranscriptTransformer {
   }
 
   /**
+   * DEV/TESTING: Force a full reparse of one session's canonical events.
+   *
+   * Wipes existing canonical events for the session and re-runs the parser
+   * from scratch on the raw message log. Use this when iterating on parser
+   * changes locally to verify the fix against an existing session WITHOUT
+   * bumping CURRENT_VERSION (which would reparse every session).
+   *
+   * Not safe to wire up as a user-facing action -- it's destructive (drops
+   * canonical events and rewrites them) and exists only for parser
+   * development. Gate any IPC that exposes it on dev mode.
+   */
+  async forceReparseSession(sessionId: string, provider: string): Promise<boolean> {
+    return this.withSessionLock(sessionId, async () => {
+      await this.transcriptStore.deleteSessionEvents(sessionId);
+      return this.transformFromBeginning(sessionId, provider);
+    });
+  }
+
+  /**
    * Process new raw messages for a session incrementally.
    * Call after writing raw messages to ai_agent_messages.
    *
