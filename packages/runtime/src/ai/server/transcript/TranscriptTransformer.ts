@@ -19,6 +19,7 @@ import { TranscriptWriter } from './TranscriptWriter';
 import type { ITranscriptEventStore, TranscriptEvent } from './types';
 import { ClaudeCodeRawParser } from './parsers/ClaudeCodeRawParser';
 import { CodexRawParser } from './parsers/CodexRawParser';
+import { CodexRawParserDispatcher } from './parsers/CodexRawParserDispatcher';
 import { CodexACPRawParser } from './parsers/CodexACPRawParser';
 import { CopilotRawParser } from './parsers/CopilotRawParser';
 import { OpenCodeRawParser } from './parsers/OpenCodeRawParser';
@@ -407,7 +408,11 @@ export class TranscriptTransformer {
       return new CopilotRawParser();
     }
     if (provider === 'openai-codex') {
-      return new CodexRawParser();
+      // Dispatches per-message between the SDK parser (legacy default) and
+      // the app-server parser based on `metadata.transport`. Old sessions
+      // with no transport tag stay on the SDK parser; new app-server sessions
+      // route to the new parser. No CURRENT_VERSION bump required.
+      return new CodexRawParserDispatcher();
     }
     if (provider === 'openai-codex-acp') {
       return new CodexACPRawParser();
