@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import dts from 'vite-plugin-dts';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+
+// .d.ts emit is handled by a separate `tsc -p tsconfig.dts.json` step in the
+// build script (vite-plugin-dts is no longer used; see _security-review/).
 
 // Plugin to copy theme JSON files to dist
 function copyThemes() {
@@ -41,22 +42,42 @@ function copyThemes() {
   };
 }
 
+// Plugin to copy editor image assets to dist/images. Replaces a vite-plugin-static-copy
+// target; the plugin had a single anonymous-handle maintainer (see _security-review/).
+function copyImages() {
+  return {
+    name: 'copy-editor-images',
+    closeBundle() {
+      const srcDir = resolve(__dirname, 'src/editor/images');
+      const destDir = resolve(__dirname, 'dist/images');
+
+      const copyDir = (src: string, dest: string) => {
+        mkdirSync(dest, { recursive: true });
+        const entries = readdirSync(src);
+        for (const entry of entries) {
+          const srcPath = join(src, entry);
+          const destPath = join(dest, entry);
+          if (statSync(srcPath).isDirectory()) {
+            copyDir(srcPath, destPath);
+          } else {
+            copyFileSync(srcPath, destPath);
+          }
+        }
+      };
+
+      try {
+        copyDir(srcDir, destDir);
+      } catch (err) {
+        console.warn('copy-editor-images: source missing, skipping:', err);
+      }
+    }
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    dts({
-      insertTypesEntry: true,
-      include: ['src'],
-      exclude: ['src/ai/server/providers/mcp-stdio-server.ts'],
-    }),
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'src/editor/images/**/*',
-          dest: 'images'
-        }
-      ]
-    }),
+    copyImages(),
     copyThemes()
   ],
   build: {

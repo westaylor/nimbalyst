@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmitOnError": false,
+    "paths": {
+      "@nimbalyst/runtime": ["./src/index.ts"],
+      "@nimbalyst/runtime/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/ai/server/providers/mcp-stdio-server.ts",
+    "src/ai/server/providers/ClaudeCodeProvider.ts",
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ]
+}

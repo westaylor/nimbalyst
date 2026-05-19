@@ -2,7 +2,7 @@
 
 Generated from `package-lock.json` and installed package legal files.
 
-- Packages scanned: 834
+- Packages scanned: 825
 - Review required: 0
 - Approved exceptions: 3
 
@@ -11,13 +11,13 @@ Generated from `package-lock.json` and installed package legal files.
 - 0BSD: 1
 - Apache-2.0: 39
 - BlueOak-1.0.0: 9
-- BSD-2-Clause: 6
-- BSD-3-Clause: 28
+- BSD-2-Clause: 4
+- BSD-3-Clause: 27
 - CC0-1.0: 2
 - EPL-2.0: 1
 - ISC: 56
 - LGPL-3.0: 1
-- MIT: 688
+- MIT: 682
 - Python-2.0: 1
 - SEE LICENSE IN README.md: 1
 - Unlicense: 1

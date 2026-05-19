@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T21:09:46.042Z",
+  "generatedAt": "2026-05-19T22:18:50.030Z",
   "scope": {
     "workspaceRoots": [
       "packages/electron",
@@ -25,20 +25,20 @@
     "description": "Production dependencies reachable from Electron, runtime, and built-in extension workspaces."
   },
   "summary": {
-    "packageCount": 834,
+    "packageCount": 825,
     "reviewRequiredCount": 0,
     "approvedExceptionCount": 3,
     "licenseCounts": {
       "0BSD": 1,
       "Apache-2.0": 39,
       "BlueOak-1.0.0": 9,
-      "BSD-2-Clause": 6,
-      "BSD-3-Clause": 28,
+      "BSD-2-Clause": 4,
+      "BSD-3-Clause": 27,
       "CC0-1.0": 2,
       "EPL-2.0": 1,
       "ISC": 56,
       "LGPL-3.0": 1,
-      "MIT": 688,
+      "MIT": 682,
       "Python-2.0": 1,
       "SEE LICENSE IN README.md": 1,
       "Unlicense": 1
@@ -5108,6 +5108,31 @@
       "noticeFiles": []
     },
     {
+      "id": "@types/yauzl@2.10.3",
+      "name": "@types/yauzl",
+      "version": "2.10.3",
+      "rawLicense": "MIT",
+      "selectedLicense": "MIT",
+      "reviewRequired": false,
+      "reviewReasons": [],
+      "approved": false,
+      "approvalReason": null,
+      "approvalLicense": null,
+      "issues": [],
+      "installPaths": [
+        "node_modules/@types/yauzl"
+      ],
+      "resolved": "https://registry.npmjs.org/@types/yauzl/-/yauzl-2.10.3.tgz",
+      "licenseFiles": [
+        {
+          "fileName": "LICENSE",
+          "relativePath": "node_modules/@types/yauzl/LICENSE",
+          "text": "    MIT License\n\n    Copyright (c) Microsoft Corporation.\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"Software\"), to deal\n    in the Software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the Software is\n    furnished to do so, subject to the following conditions:\n\n    The above copyright notice and this permission notice shall be included in all\n    copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n    SOFTWARE\n"
+        }
+      ],
+      "noticeFiles": []
+    },
+    {
       "id": "@ungap/structured-clone@1.3.0",
       "name": "@ungap/structured-clone",
       "version": "1.3.0",
@@ -5574,31 +5599,6 @@
           "fileName": "LICENSE",
           "relativePath": "node_modules/any-base/LICENSE",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2015 Kamil Harasimowicz and contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "argparse@1.0.10",
-      "name": "argparse",
-      "version": "1.0.10",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/front-matter/node_modules/argparse"
-      ],
-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.10.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/front-matter/node_modules/argparse/LICENSE",
-          "text": "(The MIT License)\n\nCopyright (C) 2012 by Vitaly Puzrin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
         }
       ],
       "noticeFiles": []
@@ -8951,31 +8951,6 @@
       "noticeFiles": []
     },
     {
-      "id": "end-of-stream@1.4.5",
-      "name": "end-of-stream",
-      "version": "1.4.5",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/end-of-stream"
-      ],
-      "resolved": "https://registry.npmjs.org/end-of-stream/-/end-of-stream-1.4.5.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/end-of-stream/LICENSE",
-          "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Mathias Buus\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
       "id": "entities@6.0.1",
       "name": "entities",
       "version": "6.0.1",
@@ -9277,31 +9252,6 @@
           "fileName": "license",
           "relativePath": "node_modules/mdast-util-find-and-replace/node_modules/escape-string-regexp/license",
           "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "esprima@4.0.1",
-      "name": "esprima",
-      "version": "4.0.1",
-      "rawLicense": "BSD-2-Clause",
-      "selectedLicense": "BSD-2-Clause",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/esprima"
-      ],
-      "resolved": "https://registry.npmjs.org/esprima/-/esprima-4.0.1.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE.BSD",
-          "relativePath": "node_modules/esprima/LICENSE.BSD",
-          "text": "Copyright JS Foundation and other contributors, https://js.foundation/\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n  * Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n  * Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\nARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\nTHIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
         }
       ],
       "noticeFiles": []
@@ -9629,31 +9579,6 @@
           "fileName": "LICENSE",
           "relativePath": "node_modules/extend/LICENSE",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Stefan Thomas\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "extract-zip@2.0.1",
-      "name": "extract-zip",
-      "version": "2.0.1",
-      "rawLicense": "BSD-2-Clause",
-      "selectedLicense": "BSD-2-Clause",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/extract-zip"
-      ],
-      "resolved": "https://registry.npmjs.org/extract-zip/-/extract-zip-2.0.1.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/extract-zip/LICENSE",
-          "text": "Copyright (c) 2014 Max Ogden and other contributors\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
         }
       ],
       "noticeFiles": []
@@ -10261,31 +10186,6 @@
       "noticeFiles": []
     },
     {
-      "id": "front-matter@4.0.2",
-      "name": "front-matter",
-      "version": "4.0.2",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/front-matter"
-      ],
-      "resolved": "https://registry.npmjs.org/front-matter/-/front-matter-4.0.2.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/front-matter/LICENSE",
-          "text": "# The MIT License (MIT)\n\nCopyright (c) Jason Campbell (\"Author\")\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
       "id": "fs-extra@10.1.0",
       "name": "fs-extra",
       "version": "10.1.0",
@@ -10406,31 +10306,6 @@
           "fileName": "LICENSE",
           "relativePath": "node_modules/get-proto/LICENSE",
           "text": "MIT License\n\nCopyright (c) 2025 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "get-stream@5.2.0",
-      "name": "get-stream",
-      "version": "5.2.0",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/get-stream"
-      ],
-      "resolved": "https://registry.npmjs.org/get-stream/-/get-stream-5.2.0.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "license",
-          "relativePath": "node_modules/get-stream/license",
-          "text": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
         }
       ],
       "noticeFiles": []
@@ -12293,31 +12168,6 @@
           "fileName": "LICENSE",
           "relativePath": "node_modules/js-tokens/LICENSE",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2014, 2015, 2016, 2017, 2018 Simon Lydell\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "js-yaml@3.14.2",
-      "name": "js-yaml",
-      "version": "3.14.2",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/front-matter/node_modules/js-yaml"
-      ],
-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.14.2.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/front-matter/node_modules/js-yaml/LICENSE",
-          "text": "(The MIT License)\n\nCopyright (C) 2011-2015 by Vitaly Puzrin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
         }
       ],
       "noticeFiles": []
@@ -16674,31 +16524,6 @@
       "noticeFiles": []
     },
     {
-      "id": "pump@3.0.3",
-      "name": "pump",
-      "version": "3.0.3",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/pump"
-      ],
-      "resolved": "https://registry.npmjs.org/pump/-/pump-3.0.3.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/pump/LICENSE",
-          "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Mathias Buus\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
       "id": "qrcode@1.5.4",
       "name": "qrcode",
       "version": "1.5.4",
@@ -18434,31 +18259,6 @@
           "fileName": "license",
           "relativePath": "node_modules/space-separated-tokens/license",
           "text": "(The MIT License)\n\nCopyright (c) 2016 Titus Wormer <tituswormer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "sprintf-js@1.0.3",
-      "name": "sprintf-js",
-      "version": "1.0.3",
-      "rawLicense": "BSD-3-Clause",
-      "selectedLicense": "BSD-3-Clause",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/front-matter/node_modules/sprintf-js"
-      ],
-      "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/front-matter/node_modules/sprintf-js/LICENSE",
-          "text": "Copyright (c) 2007-2014, Alexandru Marasteanu <hello [at) alexei (dot] ro>\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n* Redistributions of source code must retain the above copyright\n  notice, this list of conditions and the following disclaimer.\n* Redistributions in binary form must reproduce the above copyright\n  notice, this list of conditions and the following disclaimer in the\n  documentation and/or other materials provided with the distribution.\n* Neither the name of this software nor the names of its contributors may be\n  used to endorse or promote products derived from this software without\n  specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
         }
       ],
       "noticeFiles": []
@@ -20235,31 +20035,6 @@
           "fileName": "LICENSE",
           "relativePath": "packages/runtime/node_modules/web-streams-polyfill/LICENSE",
           "text": "The MIT License (MIT)\n\nCopyright (c) 2021 Mattias Buelens\nCopyright (c) 2016 Diwank Singh Tomer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
-        }
-      ],
-      "noticeFiles": []
-    },
-    {
-      "id": "web-streams-polyfill@4.2.0",
-      "name": "web-streams-polyfill",
-      "version": "4.2.0",
-      "rawLicense": "MIT",
-      "selectedLicense": "MIT",
-      "reviewRequired": false,
-      "reviewReasons": [],
-      "approved": false,
-      "approvalReason": null,
-      "approvalLicense": null,
-      "issues": [],
-      "installPaths": [
-        "node_modules/web-streams-polyfill"
-      ],
-      "resolved": "https://registry.npmjs.org/web-streams-polyfill/-/web-streams-polyfill-4.2.0.tgz",
-      "licenseFiles": [
-        {
-          "fileName": "LICENSE",
-          "relativePath": "node_modules/web-streams-polyfill/LICENSE",
-          "text": "The MIT License (MIT)\n\nCopyright (c) 2025 Mattias Buelens\nCopyright (c) 2016 Diwank Singh Tomer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
         }
       ],
       "noticeFiles": []

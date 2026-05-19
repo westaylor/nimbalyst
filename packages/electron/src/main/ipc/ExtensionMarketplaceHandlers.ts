@@ -11,11 +11,12 @@
  */
 
 import * as fs from 'fs/promises';
+import { createWriteStream } from 'node:fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { spawn } from 'child_process';
-import extractZip from 'extract-zip';
+import yauzl, { type Entry, type ZipFile } from 'yauzl';
 import { BrowserWindow, net } from 'electron';
 import { logger } from '../utils/logger';
 import { safeHandle } from '../utils/ipcRegistry';
@@ -229,12 +230,65 @@ async function verifyChecksum(filePath: string, expectedChecksum: string): Promi
 /**
  * Extract a .nimext (zip) file to a directory.
  *
- * Uses the pure-JS `extract-zip` package so this works on Windows (where there
- * is no system `unzip` binary) in addition to macOS and Linux.
+ * Uses `yauzl` (pure-JS, no native deps) so this works on Windows in addition
+ * to macOS and Linux. Refuses any zip entry whose resolved path would escape
+ * the destination directory (zip-slip guard). File entries are always written
+ * as regular files; we never honour stored symlink metadata.
  */
 async function extractNimext(nimextPath: string, destPath: string): Promise<void> {
   await fs.mkdir(destPath, { recursive: true });
-  await extractZip(nimextPath, { dir: destPath });
+  const destRoot = path.resolve(destPath);
+
+  const zipfile = await new Promise<ZipFile>((resolve, reject) => {
+    yauzl.open(nimextPath, { lazyEntries: true }, (err, file) => {
+      if (err || !file) {
+        reject(err ?? new Error('yauzl.open returned no zipfile'));
+        return;
+      }
+      resolve(file);
+    });
+  });
+
+  return new Promise<void>((resolve, reject) => {
+    zipfile.on('error', reject);
+    zipfile.on('end', resolve);
+    zipfile.on('entry', (entry: Entry) => {
+      (async () => {
+        const target = path.resolve(destRoot, entry.fileName);
+        const rel = path.relative(destRoot, target);
+        if (rel === '' || rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+          throw new Error(`Refusing zip entry that escapes the extraction dir: ${entry.fileName}`);
+        }
+        if (/\/$/.test(entry.fileName)) {
+          await fs.mkdir(target, { recursive: true });
+          zipfile.readEntry();
+          return;
+        }
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        const readStream = await new Promise<NodeJS.ReadableStream>((res, rej) => {
+          zipfile.openReadStream(entry, (err, stream) => {
+            if (err || !stream) {
+              rej(err ?? new Error('openReadStream returned no stream'));
+              return;
+            }
+            res(stream);
+          });
+        });
+        await new Promise<void>((res, rej) => {
+          const out = createWriteStream(target);
+          readStream.pipe(out);
+          out.on('finish', () => res());
+          out.on('error', rej);
+          readStream.on('error', rej);
+        });
+        zipfile.readEntry();
+      })().catch((err) => {
+        zipfile.close();
+        reject(err);
+      });
+    });
+    zipfile.readEntry();
+  });
 }
 
 /**

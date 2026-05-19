@@ -1,10 +1,12 @@
-import { resolve } from 'path'
+import { resolve, basename, dirname, join } from 'path'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import viteNimbalystPlugin from '../shared/viteNimbalystPlugin.ts'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import fs from 'fs'
+
+// vite-plugin-static-copy and vite-plugin-node-polyfills have been replaced
+// with inline equivalents below (single anonymous-handle maintainers; see
+// _security-review/.supply-chain-risk-auditor/results.md).
 
 // Plugin to optimize Shiki language imports
 const optimizeShikiPlugin = () => {
@@ -201,72 +203,61 @@ export default defineConfig({
       'process.env.OFFICIAL_BUILD': JSON.stringify(isOfficialBuild ? 'true' : 'false'),
       'process.env.IS_DEV_MODE': JSON.stringify(isDevMode ? 'true' : 'false'),
       '__CLAUDE_AGENT_SDK_VERSION__': JSON.stringify(claudeAgentSdkVersion),
+      // Identifier replacement only -- esbuild's `define` rejects object
+      // literals. The runtime `process` shim is installed via the
+      // rollupOptions.output.banner below (replaces vite-plugin-node-polyfills).
+      global: 'globalThis',
     },
     plugins: [
-      // Process polyfill for packaged builds - handles dependencies that access process globals.
-      // Must be first so transforms run before other plugins.
-      // Only polyfills in production builds; dev mode works fine with Vite's built-in handling.
-      nodePolyfills({
-        globals: {
-          Buffer: false,
-          global: false,
-          process: 'build',
-        },
-        include: [],
-        protocolImports: false,
-      }),
       viteNimbalystPlugin(),
       react(),
       optimizeExcalidrawPlugin(),
       optimizeShikiPlugin(),
-      // Monaco workers are configured in monacoConfig.ts using Vite's native ?worker imports
-      // NOTE: On Windows, vite-plugin-static-copy uses fast-glob which expects
-      // POSIX-style paths. Absolute Windows paths with backslashes won't match
-      // and cause "No file was found to copy" errors in CI. Normalize to POSIX.
-      // Ref: https://github.com/sapphi-red/vite-plugin-static-copy (fast-glob)
+      // Inline replacement for vite-plugin-static-copy: copies a small set of
+      // renderer assets to the renderer outDir at closeBundle. See
+      // _security-review/.supply-chain-risk-auditor/results.md for rationale.
       (() => {
-        const toPosix = (p: string) => p.replace(/\\/g, '/');
-        const targets: Array<{ src: string; dest: string; overwrite?: boolean }> = [];
+        const flatFiles: string[] = [];
         const icon = resolve(__dirname, 'icon.png');
         const logo = resolve(__dirname, 'nimbalyst-logo.png');
         const about = resolve(__dirname, 'about.html');
         const onboardingDir = resolve(__dirname, 'resources/onboarding');
-
-        if (fs.existsSync(icon)) {
-          targets.push({ src: toPosix(icon), dest: '', overwrite: true });
-        }
-        if (fs.existsSync(logo)) {
-          targets.push({ src: toPosix(logo), dest: '', overwrite: true });
-        }
-        if (fs.existsSync(about)) {
-          targets.push({ src: toPosix(about), dest: '', overwrite: true });
-        }
-        // Copy onboarding images for feature walkthrough
-        if (fs.existsSync(onboardingDir)) {
-          targets.push({ src: toPosix(resolve(onboardingDir, '*')), dest: 'onboarding', overwrite: true });
-        }
-        // Copy es-module-shims for extension loading (enables dynamic import maps)
+        // Loading prismjs as a classic <script> from index.html sidesteps a
+        // Vite/esbuild prebundle reordering of @lexical/code-prism that would
+        // otherwise leave window.Prism undefined when language chunks evaluate.
         const esModuleShims = resolve(__dirname, '../../node_modules/es-module-shims/dist/es-module-shims.js');
-        if (fs.existsSync(esModuleShims)) {
-          targets.push({ src: toPosix(esModuleShims), dest: '', overwrite: true });
-        }
-        // Copy ghostty-web WASM file for terminal emulation
         const ghosttyWasm = resolve(__dirname, '../../node_modules/ghostty-web/ghostty-vt.wasm');
-        if (fs.existsSync(ghosttyWasm)) {
-          targets.push({ src: toPosix(ghosttyWasm), dest: '', overwrite: true });
-        }
-        // Copy prismjs core so index.html can load it as a classic <script>
-        // BEFORE any ESM module evaluates. Vite/esbuild's prebundling of
-        // @lexical/code (which transitively imports @lexical/code-prism) ends
-        // up reordering chunk imports so the prism-* language chunks evaluate
-        // before prismjs main, which the language files need to have set
-        // `window.Prism`. Loading prismjs as a classic script in the HTML
-        // sidesteps the reorder.
         const prismCore = resolve(__dirname, '../../node_modules/prismjs/prism.js');
-        if (fs.existsSync(prismCore)) {
-          targets.push({ src: toPosix(prismCore), dest: '', overwrite: true });
+
+        for (const f of [icon, logo, about, esModuleShims, ghosttyWasm, prismCore]) {
+          if (fs.existsSync(f)) flatFiles.push(f);
         }
-        return viteStaticCopy({ targets });
+
+        let outDir = 'out/renderer';
+        return {
+          name: 'nimbalyst-electron-static-copy',
+          apply: 'build' as const,
+          configResolved(config: any) {
+            if (config?.build?.outDir) outDir = config.build.outDir;
+          },
+          closeBundle() {
+            for (const from of flatFiles) {
+              const dest = resolve(outDir, basename(from));
+              fs.mkdirSync(dirname(dest), { recursive: true });
+              fs.copyFileSync(from, dest);
+            }
+            if (fs.existsSync(onboardingDir)) {
+              const destDir = resolve(outDir, 'onboarding');
+              fs.mkdirSync(destDir, { recursive: true });
+              for (const entry of fs.readdirSync(onboardingDir)) {
+                const src = join(onboardingDir, entry);
+                if (fs.statSync(src).isFile()) {
+                  fs.copyFileSync(src, join(destDir, entry));
+                }
+              }
+            }
+          }
+        };
       })()
     ].filter(Boolean),
     server: {
@@ -296,6 +287,14 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/renderer/index.html')
+        },
+        output: {
+          // Minimal `process` shim so dependency code that reads
+          // process.env.X / process.platform doesn't crash. Replaces
+          // vite-plugin-node-polyfills (globals.process: 'build').
+          // The `||=` makes repeated chunk evaluations idempotent.
+          banner:
+            'globalThis.process ||= { env: {}, platform: "browser", versions: {} };'
         }
       }
     },

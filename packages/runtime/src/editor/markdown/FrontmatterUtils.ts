@@ -3,10 +3,11 @@
  * Provides functions to parse and serialize frontmatter while storing it
  * in the Lexical root node's NodeState.
  *
- * Uses jxson/front-matter for browser-compatible YAML parsing.
+ * Parsing is implemented inline against `js-yaml` (already a dependency) so
+ * we don't pull in jxson/front-matter or gray-matter -- both had supply-chain
+ * concerns (stale / Buffer-dependent in the browser).
  */
 
-import frontMatter from 'front-matter';
 import * as yaml from 'js-yaml';
 import { $getRoot, $getState, $setState, createState } from 'lexical';
 
@@ -32,7 +33,6 @@ const frontmatterState = createState('frontmatter', {
 
 /**
  * Stores frontmatter data in the root node's NodeState.
- * This data will be preserved during editor operations, collaboration, and reconciliation.
  */
 export function $setFrontmatter(data: FrontmatterData | null): void {
   const root = $getRoot();
@@ -41,11 +41,49 @@ export function $setFrontmatter(data: FrontmatterData | null): void {
 
 /**
  * Retrieves frontmatter data from the root node's NodeState.
- * Returns null if no frontmatter is stored.
  */
 export function $getFrontmatter(): FrontmatterData | null {
   const root = $getRoot();
   return $getState(root, frontmatterState);
+}
+
+interface SplitFrontmatter {
+  body: string;
+  attributes: FrontmatterData | null;
+  frontmatter: string;
+}
+
+/**
+ * Split a markdown string into its YAML frontmatter block and body.
+ * Matches the `---\n...\n---\n` convention used by jxson/front-matter and
+ * gray-matter. Returns the entire string as body when the opening `---` is
+ * absent or no closing `---` is found.
+ */
+function splitFrontmatter(markdown: string): SplitFrontmatter {
+  // Opening fence: must be at start of file, exactly `---` on its own line.
+  const openMatch = markdown.match(/^---\r?\n/);
+  if (!openMatch) {
+    return { body: markdown, attributes: null, frontmatter: '' };
+  }
+  const restStart = openMatch[0].length;
+  // Closing fence: `---` on its own line, preceded by a newline.
+  const closeMatch = markdown.slice(restStart).match(/(\r?\n)---(\r?\n|$)/);
+  if (!closeMatch || closeMatch.index === undefined) {
+    return { body: markdown, attributes: null, frontmatter: '' };
+  }
+  const frontmatterText = markdown.slice(restStart, restStart + closeMatch.index);
+  const bodyStart = restStart + closeMatch.index + closeMatch[0].length;
+  const body = markdown.slice(bodyStart);
+  let attributes: FrontmatterData | null = null;
+  try {
+    const parsed = yaml.load(frontmatterText);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      attributes = parsed as FrontmatterData;
+    }
+  } catch {
+    // YAML parse failed - leave attributes null; caller's fallback path runs.
+  }
+  return { body, attributes, frontmatter: frontmatterText };
 }
 
 /**
@@ -57,81 +95,82 @@ export function parseFrontmatter(markdown: string): {
   data: FrontmatterData | null;
   orig?: string;
 } {
-  try {
-    const parsed = frontMatter(markdown);
+  const split = splitFrontmatter(markdown);
+  const hasFrontmatterBlock = split.frontmatter.trim().length > 0;
 
-    // Check if frontmatter actually exists
-    const hasFrontmatter = parsed.frontmatter &&
-      typeof parsed.frontmatter === 'string' &&
-      parsed.frontmatter.trim().length > 0;
-
+  if (hasFrontmatterBlock && split.attributes && Object.keys(split.attributes).length > 0) {
     return {
-      content: parsed.body,
-      data: hasFrontmatter && parsed.attributes && Object.keys(parsed.attributes).length > 0
-        ? parsed.attributes
-        : null,
+      content: split.body,
+      data: split.attributes,
       orig: markdown,
     };
-  } catch (error) {
-    // If frontmatter parsing fails, try to extract what we can manually
-    if (markdown.startsWith('---\n')) {
-      const endIndex = markdown.indexOf('\n---\n', 4);
-      if (endIndex !== -1) {
-        const frontmatterText = markdown.substring(4, endIndex);
-        const content = markdown.substring(endIndex + 5);
+  }
 
-        // Try to parse line-by-line and extract what we can
-        const data: FrontmatterData = {};
-        const lines = frontmatterText.split('\n');
+  // Fallback: yaml.load threw or returned non-object, but the fences look
+  // present. Parse line-by-line to extract whatever we can. Mirrors the
+  // previous front-matter catch path.
+  if (markdown.startsWith('---\n')) {
+    const endIndex = markdown.indexOf('\n---\n', 4);
+    if (endIndex !== -1) {
+      const frontmatterText = markdown.substring(4, endIndex);
+      const content = markdown.substring(endIndex + 5);
 
-        for (const line of lines) {
-          // Simple key: value parsing that's more forgiving
-          const colonIndex = line.indexOf(':');
-          if (colonIndex > 0) {
-            const key = line.substring(0, colonIndex).trim();
-            const valueStr = line.substring(colonIndex + 1).trim();
+      const data: FrontmatterData = {};
+      const lines = frontmatterText.split('\n');
 
-            if (key && !key.includes(' ')) { // Simple keys only
-              // Try to parse the value
-              let value: any = valueStr;
+      for (const line of lines) {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          const key = line.substring(0, colonIndex).trim();
+          const valueStr = line.substring(colonIndex + 1).trim();
 
-              // Remove quotes if present
-              if ((valueStr.startsWith('"') && valueStr.endsWith('"')) ||
-                  (valueStr.startsWith("'") && valueStr.endsWith("'"))) {
-                value = valueStr.slice(1, -1);
-              } else if (valueStr === 'true') {
-                value = true;
-              } else if (valueStr === 'false') {
-                value = false;
-              } else if (valueStr === 'null' || valueStr === '') {
-                value = null;
-              } else if (/^-?\d+$/.test(valueStr)) {
-                value = parseInt(valueStr, 10);
-              } else if (/^-?\d+\.\d+$/.test(valueStr)) {
-                value = parseFloat(valueStr);
-              }
+          if (key && !key.includes(' ')) {
+            let value: any = valueStr;
 
-              data[key] = value;
+            if ((valueStr.startsWith('"') && valueStr.endsWith('"')) ||
+                (valueStr.startsWith("'") && valueStr.endsWith("'"))) {
+              value = valueStr.slice(1, -1);
+            } else if (valueStr === 'true') {
+              value = true;
+            } else if (valueStr === 'false') {
+              value = false;
+            } else if (valueStr === 'null' || valueStr === '') {
+              value = null;
+            } else if (/^-?\d+$/.test(valueStr)) {
+              value = parseInt(valueStr, 10);
+            } else if (/^-?\d+\.\d+$/.test(valueStr)) {
+              value = parseFloat(valueStr);
             }
+
+            data[key] = value;
           }
         }
+      }
 
-        console.warn('Partially parsed malformed frontmatter:', error, 'Extracted:', data);
+      if (Object.keys(data).length > 0) {
+        console.warn('Partially parsed malformed frontmatter. Extracted:', data);
         return {
           content,
-          data: Object.keys(data).length > 0 ? data : null,
+          data,
           orig: markdown,
         };
       }
     }
+  }
 
-    // If we can't find frontmatter boundaries, treat entire content as body
-    console.warn('No frontmatter boundaries found, treating entire content as body:', error);
+  if (hasFrontmatterBlock) {
+    // We found a frontmatter block but couldn't parse anything useful.
     return {
-      content: markdown,
+      content: split.body,
       data: null,
+      orig: markdown,
     };
   }
+
+  return {
+    content: markdown,
+    data: null,
+  };
 }
 
 /**
@@ -147,21 +186,14 @@ export function serializeWithFrontmatter(
   }
 
   try {
-    // Use js-yaml for proper YAML serialization
     const yamlStr = yaml.dump(data, {
-      lineWidth: -1, // Don't wrap lines
-      sortKeys: false, // Preserve key order
-      quotingType: '"', // Use double quotes when needed
-      forceQuotes: false, // Only quote when necessary
+      lineWidth: -1,
+      sortKeys: false,
+      quotingType: '"',
+      forceQuotes: false,
     });
-
-    // Ensure proper formatting with --- markers
-    // Remove trailing newline from yaml.dump since it adds one
     const trimmedYaml = yamlStr.trimEnd();
-
-    // Only add a newline at the start of content if it doesn't already have one
     const contentPrefix = content.startsWith('\n') ? '' : '\n';
-
     return `---\n${trimmedYaml}\n---${contentPrefix}${content}`;
   } catch (error) {
     console.warn('Failed to serialize frontmatter:', error);
@@ -184,7 +216,6 @@ export function isValidFrontmatter(data: any): data is FrontmatterData {
     data !== null &&
     typeof data === 'object' &&
     !Array.isArray(data) &&
-    // Ensure it's a plain object
     Object.getPrototypeOf(data) === Object.prototype
   );
 }
