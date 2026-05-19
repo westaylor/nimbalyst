@@ -10,6 +10,7 @@ import { parse as parseUrl } from "url";
 import { randomUUID } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import * as yaml from "js-yaml";
 import { BrowserWindow } from "electron";
 import { getMostRecentlyFocusedWorkspaceWindow, windowStates, windowFocusOrder } from "../window/WindowManager";
 import { windows } from "../window/windowState";
@@ -514,11 +515,20 @@ async function tryCreateServer(port: number): Promise<any> {
         // the browser-extension web clipper can keep posting clips.
         if (req.method === "OPTIONS") {
           if (pathname === "/clip") {
-            res.writeHead(200, {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "Content-Type",
-            });
+            // Only accept preflights from a browser-extension origin (chrome / firefox).
+            // A page running at http(s):// cannot forge its Origin from JS, so this
+            // also blocks the "any web page plants a file" vector flagged in M4.
+            const origin = req.headers.origin || '';
+            if (/^(?:chrome-extension|moz-extension):\/\//.test(origin)) {
+              res.writeHead(200, {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Vary": "Origin",
+              });
+            } else {
+              res.writeHead(403);
+            }
           } else {
             res.writeHead(200, {
               "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -818,8 +828,17 @@ async function tryCreateServer(port: number): Promise<any> {
             }
           }
         } else if (pathname === "/clip" && req.method === "POST") {
-          // Handle web clip from browser extension
-          res.setHeader("Access-Control-Allow-Origin", "*");
+          // Reject every non-extension origin. The browser sets `Origin`
+          // and a page's JavaScript cannot override it, so this closes the
+          // "any web page POSTs a clip" hole (M4) at the auth layer.
+          const origin = req.headers.origin || '';
+          if (!/^(?:chrome-extension|moz-extension):\/\//.test(origin)) {
+            res.writeHead(403);
+            res.end("Forbidden: only browser-extension origins may POST to /clip");
+            return;
+          }
+          res.setHeader("Access-Control-Allow-Origin", origin);
+          res.setHeader("Vary", "Origin");
           const body = await readJsonBody(req) as any;
           if (!body || !body.content) {
             res.writeHead(400);
@@ -873,14 +892,18 @@ async function tryCreateServer(port: number): Promise<any> {
             fs.mkdirSync(clipsDir, { recursive: true });
           }
 
-          const frontmatter = [
-            "---",
-            `title: "${clipTitle.replace(/"/g, '\\"')}"`,
-            `url: "${clipUrl}"`,
-            `clipped: ${new Date().toISOString()}`,
-            body.selection ? "type: selection" : "type: page",
-            "---",
-          ].join("\n");
+          // Build frontmatter via js-yaml so body.url / body.title / body.content
+          // cannot break out of the YAML strings to inject keys or values.
+          const frontmatterBody = yaml.dump({
+            title: clipTitle,
+            url: clipUrl,
+            clipped: new Date().toISOString(),
+            type: body.selection ? 'selection' : 'page',
+          }, {
+            lineWidth: -1,
+            quotingType: '"',
+          }).trimEnd();
+          const frontmatter = `---\n${frontmatterBody}\n---`;
 
           let finalPath = path.join(clipsDir, `${dateStr}-${sanitized}.md`);
           if (fs.existsSync(finalPath)) {

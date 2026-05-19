@@ -14,6 +14,7 @@ import { createApplicationMenu } from './menu/ApplicationMenu';
 import { updateNativeTheme, updateWindowTitleBars } from './theme/ThemeManager';
 import { restoreSessionState, saveSessionState } from './session/SessionState';
 import { getRestartSignalPath } from './utils/appPaths';
+import { applyWindowSecurityHardening } from './utils/windowSecurity';
 import { createWorkspaceManagerWindow, setupWorkspaceManagerHandlers, wasWorkspaceManagerManuallyClosed } from './window/WorkspaceManagerWindow.ts';
 import { showSplashScreen, closeSplashScreen } from './window/SplashScreen';
 import { registerFileHandlers } from './ipc/FileHandlers';
@@ -854,6 +855,14 @@ function activationLog(msg: string) {
     // Use logger directly since overrideConsole() hasn't run yet at startup
     // logger.main.info(`[ACTIVATION +${elapsed}ms] ${msg}`);
 }
+
+// Apply renderer-navigation hardening to every BrowserWindow at creation
+// time. Blocks window.open and refuses to navigate the window to an attacker
+// origin -- both would otherwise inherit the preload script and IPC surface.
+// See packages/electron/src/main/utils/windowSecurity.ts and _security-review/ M3.
+app.on('browser-window-created', (_event, win) => {
+    applyWindowSecurityHardening(win);
+});
 
 app.on('browser-window-focus', (_event, win) => {
     activationLog(`browser-window-focus: window id=${win.id} title="${win.getTitle()}"`);

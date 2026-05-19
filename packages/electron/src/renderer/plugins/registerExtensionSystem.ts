@@ -447,6 +447,13 @@ function serializeEvalResult(result: unknown): string {
  */
 function setupRendererEvalListener(): void {
   if (rendererEvalListenerSetup) return;
+  // Defense-in-depth: never wire up renderer-side arbitrary eval in
+  // production builds, even if the call site forgets. process.env.IS_DEV_MODE
+  // is set at build time by Vite's define block (see electron.vite.config.ts).
+  if (process.env.IS_DEV_MODE !== 'true') {
+    console.warn('[ExtensionSystem] renderer:eval listener refused in non-dev build');
+    return;
+  }
   rendererEvalListenerSetup = true;
 
   const electronAPI = (window as any).electronAPI;
@@ -683,8 +690,13 @@ export async function registerExtensionSystem(): Promise<void> {
     // Set up IPC listener for extension status queries
     setupExtensionStatusListener();
 
-    // Set up IPC listener for renderer eval requests (dev mode only)
-    setupRendererEvalListener();
+    // Set up IPC listener for renderer eval requests (dev mode only).
+    // Gated here AND inside setupRendererEvalListener so a malicious
+    // extension that somehow reaches this code path in a packaged build
+    // still cannot resurrect the eval channel.
+    if (process.env.IS_DEV_MODE === 'true') {
+      setupRendererEvalListener();
+    }
 
     // Set up IPC listeners for extension test tools (dev mode only)
     setupExtensionTestListeners();

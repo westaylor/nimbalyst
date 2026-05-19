@@ -9,6 +9,16 @@ import fs from 'fs'
 // _security-review/.supply-chain-risk-auditor/results.md).
 
 // Plugin to optimize Shiki language imports
+// @anthropic-ai/sdk@0.97+ added an `agent-toolset/` submodule that imports
+// node:fs / node:path / node:crypto (the computer-use tool). The renderer
+// never invokes the SDK -- model listing uses direct `fetch`, every other
+// AI call goes through the main process -- but value imports like
+// `import Anthropic from '@anthropic-ai/sdk'` still drag the whole SDK
+// (and its Node-only subtree) into the renderer bundle, breaking the build.
+//
+// Alias the SDK to a stub for the renderer build only. See the stub file
+// for the exposed surface.
+
 const optimizeShikiPlugin = () => {
   return {
     name: 'optimize-shiki',
@@ -300,6 +310,14 @@ export default defineConfig({
     },
     resolve: {
       alias: [
+        // Alias @anthropic-ai/sdk -> renderer stub (see anthropic-sdk-renderer-stub.ts).
+        // Covers bare imports and every subpath (e.g. `/resources`, `/tools/agent-toolset`).
+        // The renderer never executes the SDK -- model listing uses `fetch`, all
+        // other AI calls go through the main process via IPC.
+        {
+          find: /^@anthropic-ai\/sdk(\/.*)?$/,
+          replacement: resolve(__dirname, 'src/renderer/mocks/anthropic-sdk-renderer-stub.ts'),
+        },
         // Ensure renderer also points runtime imports at source
         { find: '@nimbalyst/runtime', replacement: runtimeSrcDir },
         // Redirect `import ... from 'prismjs'` (exact match only) to a shim

@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { ShikiCode } from './ShikiCode';
 
 // Defense-in-depth against KaTeX's history of XSS / DoS advisories. Agent-
 // supplied math is untrusted, so disable anything that can elevate it (\href,
@@ -423,22 +423,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             // Code block with language - use syntax highlighting
             if (language) {
               const syntaxBlock = (
-                <SyntaxHighlighter
-                  style={{} as any}
-                  customStyle={codeStyle}
+                <ShikiCode
+                  code={codeString}
                   language={language}
-                  PreTag="div"
-                  codeTagProps={{
-                    style: {
-                      fontFamily: 'var(--font-mono, monospace)',
-                      fontSize: 'inherit',
-                      background: 'none'
-                    }
+                  customStyle={codeStyle}
+                  codeTagStyle={{
+                    fontFamily: 'var(--font-mono, monospace)',
+                    fontSize: 'inherit',
+                    background: 'none',
                   }}
-                  {...props}
-                >
-                  {codeString}
-                </SyntaxHighlighter>
+                />
               );
               // Only wrap multi-line blocks with OverflowWrapper
               return isSingleLine

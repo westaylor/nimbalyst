@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { ShikiCode } from './ShikiCode';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 const COLLAPSE_THRESHOLD = 30;
@@ -99,8 +99,9 @@ export const NewFilePreview: React.FC<NewFilePreviewProps> = ({
           </div>
         ) : (
           <div className="markdown-content" style={{ color: 'var(--nim-text)' }}>
-            <SyntaxHighlighter
-              style={{} as any}
+            <ShikiCode
+              code={displayContent}
+              language={language || undefined}
               customStyle={{
                 backgroundColor: 'var(--nim-bg-secondary)',
                 color: 'var(--nim-text)',
@@ -109,18 +110,12 @@ export const NewFilePreview: React.FC<NewFilePreviewProps> = ({
                 fontSize: '0.8125rem',
                 lineHeight: '1.5',
               }}
-              language={language || undefined}
-              PreTag="div"
-              codeTagProps={{
-                style: {
-                  fontFamily: 'var(--font-mono, monospace)',
-                  fontSize: 'inherit',
-                  background: 'none',
-                },
+              codeTagStyle={{
+                fontFamily: 'var(--font-mono, monospace)',
+                fontSize: 'inherit',
+                background: 'none',
               }}
-            >
-              {displayContent}
-            </SyntaxHighlighter>
+            />
           </div>
         )}
 

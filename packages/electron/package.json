@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.126",
-    "@anthropic-ai/sdk": "^0.81.0",
+    "@anthropic-ai/sdk": "^0.97.0",
     "@electric-sql/pglite": "0.3.14",
     "@electron-toolkit/utils": "^4.0.0",
     "@excalidraw/excalidraw": "0.17.6",
@@ -128,7 +128,7 @@
     "autoprefixer": "^10.4.20",
     "bufferutil": "^4.1.0",
     "dotenv": "^16.6.1",
-    "electron": "41.6.1",
+    "electron": "42.2.0",
     "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.0",
     "esbuild": "^0.25.12",
@@ -148,7 +148,7 @@
   "build": {
     "appId": "com.nimbalyst.electron",
     "productName": "Nimbalyst",
-    "electronVersion": "41.6.1",
+    "electronVersion": "42.2.0",
     "nodeGypRebuild": false,
     "buildDependenciesFromSource": false,
     "npmRebuild": true,

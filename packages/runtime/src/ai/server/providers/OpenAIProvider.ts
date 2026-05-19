@@ -220,7 +220,10 @@ export class OpenAIProvider extends BaseAIProvider {
     try {
       // Use the centralized tool system
       const tools: OpenAI.Chat.ChatCompletionTool[] = this.getToolsInOpenAIFormat();
-      console.log(`[OpenAIProvider] Available tools for OpenAI:`, tools.map(t => t.function?.name || 'unknown'));
+      // OpenAI v5+ split `ChatCompletionTool` into a discriminated union of
+      // `function` and `custom` variants. We only emit function-shaped tools
+      // (see `getToolsInOpenAIFormat`), but TypeScript needs the narrow.
+      console.log(`[OpenAIProvider] Available tools for OpenAI:`, tools.map(t => t.type === 'function' ? t.function.name : 'unknown'));
       if (tools.length === 0) {
         console.warn('[OpenAIProvider] WARNING: No tools available! Check tool registration.');
       }

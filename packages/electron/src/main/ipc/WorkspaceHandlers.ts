@@ -1065,14 +1065,22 @@ export function registerWorkspaceHandlers() {
             const isTerminalEditor = editorType === 'vim' || editorType === 'nvim';
 
             if (isTerminalEditor && process.platform === 'darwin') {
-                // On macOS, open terminal with the editor
-                // Use osascript to open Terminal.app with the command
-                const escapedPath = filePath.replace(/'/g, "'\\''");
-                const script = `tell application "Terminal"
-                    activate
-                    do script "${command} '${escapedPath}'"
-                end tell`;
-                spawn('osascript', ['-e', script], {
+                // On macOS, open Terminal.app and run the editor.
+                // The command and file path are passed as AppleScript argv
+                // items (`on run argv`) and the path is wrapped in
+                // AppleScript's `quoted form of`, which returns a properly
+                // shell-quoted value. No string-interpolation, so a path or
+                // configured custom-editor command containing quotes,
+                // backslashes, or spaces cannot break out into shell.
+                const script = `on run argv
+                    set editorCommand to item 1 of argv
+                    set filePath to quoted form of (item 2 of argv)
+                    tell application "Terminal"
+                        activate
+                        do script (editorCommand & " " & filePath)
+                    end tell
+                end run`;
+                spawn('osascript', ['-e', script, '--', command, filePath], {
                     detached: true,
                     stdio: 'ignore',
                 }).unref();
