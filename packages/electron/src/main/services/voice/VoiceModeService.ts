@@ -6,6 +6,7 @@ import { BrowserWindow, ipcMain, systemPreferences } from 'electron';
 import { RealtimeAPIClient } from './RealtimeAPIClient';
 import { safeHandle } from '../../utils/ipcRegistry';
 import Store from 'electron-store';
+import { AI_SETTINGS_ENCRYPTION_KEY } from '../../utils/aiSettingsEncryption';
 import { AnalyticsService } from '../analytics/AnalyticsService';
 import { AISessionsRepository } from '@nimbalyst/runtime';
 import { getDatabase } from '../../database/initialize';
@@ -227,6 +228,7 @@ export function initVoiceModeService() {
   // Create settings store instance (MUST match AIService store name!)
   const settingsStore = new Store<Record<string, unknown>>({
     name: 'ai-settings',  // Same as AIService!
+    encryptionKey: AI_SETTINGS_ENCRYPTION_KEY,
     watch: true,
   });
 

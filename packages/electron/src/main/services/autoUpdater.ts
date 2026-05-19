@@ -20,6 +20,12 @@ import {
 // directly to avoid the Electron app-global load chain.
 export { classifyUpdateError, categorizeDownloadDuration, isWindowsRenameLockError };
 
+// Auto-update is disabled in this build. The runtime update check against
+// the GitHub release feed never fires. The electron-updater dependency and
+// the package.json `build.publish` config are left intact (they only affect
+// release-artifact metadata and are inert once no check runs).
+const AUTO_UPDATE_DISABLED: boolean = true;
+
 // Reminder suppression duration: 24 hours
 const REMINDER_SUPPRESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 const GITHUB_UPDATE_PROVIDER = {
@@ -535,6 +541,10 @@ export class AutoUpdaterService {
   }
 
   public startAutoUpdateCheck(intervalMinutes = 60) {
+    if (AUTO_UPDATE_DISABLED) {
+      log.info('Auto-update disabled in this build; skipping update check schedule');
+      return;
+    }
     // Initial check after 30 seconds
     setTimeout(() => {
       this.checkForUpdates();
@@ -558,6 +568,10 @@ export class AutoUpdaterService {
   }
 
   public async checkForUpdates() {
+    if (AUTO_UPDATE_DISABLED) {
+      log.info('Auto-update disabled in this build; skipping update check');
+      return;
+    }
     if (this.isCheckingForUpdate) {
       log.info('Already checking for updates, skipping...');
       return;
@@ -572,6 +586,16 @@ export class AutoUpdaterService {
   }
 
   public async checkForUpdatesWithUI() {
+    if (AUTO_UPDATE_DISABLED) {
+      log.info('Auto-update disabled in this build; manual update check is a no-op');
+      this.sendToFrontmostWindow('update-toast:checking');
+      setTimeout(() => {
+        this.sendToFrontmostWindow('update-toast:error', {
+          message: 'Automatic updates are disabled in this build'
+        });
+      }, 500);
+      return;
+    }
     if (this.isCheckingForUpdate) {
       // Already checking, don't show anything - the checking toast is already visible
       return;

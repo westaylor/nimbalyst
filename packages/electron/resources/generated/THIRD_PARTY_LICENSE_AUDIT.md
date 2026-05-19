@@ -2,14 +2,14 @@
 
 Generated from `package-lock.json` and installed package legal files.
 
-- Packages scanned: 833
+- Packages scanned: 834
 - Review required: 0
 - Approved exceptions: 3
 
 ## License Counts
 
 - 0BSD: 1
-- Apache-2.0: 38
+- Apache-2.0: 39
 - BlueOak-1.0.0: 9
 - BSD-2-Clause: 6
 - BSD-3-Clause: 28

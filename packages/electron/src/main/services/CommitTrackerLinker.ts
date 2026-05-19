@@ -11,6 +11,7 @@
 
 import Store from 'electron-store';
 import { logger } from '../utils/logger';
+import { AI_SETTINGS_ENCRYPTION_KEY } from '../utils/aiSettingsEncryption';
 import type { CommitDetectedEvent } from '../file/GitRefWatcher';
 import type { TrackerAutomationSettings } from '../utils/store';
 import { getEffectiveTrackerAutomation } from '../utils/store';
@@ -82,7 +83,7 @@ export class CommitTrackerLinker {
 
   private getAISettingsStore(): Store<Record<string, unknown>> {
     if (!this.settingsStore) {
-      this.settingsStore = new Store({ name: 'ai-settings' });
+      this.settingsStore = new Store({ name: 'ai-settings', encryptionKey: AI_SETTINGS_ENCRYPTION_KEY });
     }
     return this.settingsStore;
   }

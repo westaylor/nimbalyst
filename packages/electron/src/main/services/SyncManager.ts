@@ -14,6 +14,7 @@
  */
 
 import type { SessionStore } from '@nimbalyst/runtime';
+import { AI_SETTINGS_ENCRYPTION_KEY } from '../utils/aiSettingsEncryption';
 import type { DeviceInfo } from '@nimbalyst/runtime/sync';
 import * as syncModule from '@nimbalyst/runtime/sync';
 import { getSessionSyncConfig, setSessionSyncConfig, getReleaseChannel, getDefaultAIModel, store, type SessionSyncConfig } from '../utils/store';
@@ -699,7 +700,7 @@ export async function initializeSync(baseStore: SessionStore): Promise<SessionSt
     setTimeout(async () => {
       try {
         const Store = (await import('electron-store')).default;
-        const aiStore = new Store({ name: 'ai-settings' });
+        const aiStore = new Store({ name: 'ai-settings', encryptionKey: AI_SETTINGS_ENCRYPTION_KEY });
         const apiKeys = aiStore.get('apiKeys', {}) as Record<string, string>;
         const openaiKey = apiKeys['openai'];
         if (openaiKey) {
@@ -730,7 +731,7 @@ export async function initializeSync(baseStore: SessionStore): Promise<SessionSt
             setTimeout(() => {
               // Sync settings to the mobile device
               import('electron-store').then(({ default: Store }) => {
-                const aiStore = new Store({ name: 'ai-settings' });
+                const aiStore = new Store({ name: 'ai-settings', encryptionKey: AI_SETTINGS_ENCRYPTION_KEY });
                 const apiKeys = aiStore.get('apiKeys', {}) as Record<string, string>;
                 const openaiKey = apiKeys['openai'];
                 if (openaiKey) {
@@ -1101,7 +1102,7 @@ async function getAvailableModelsForMobile(): Promise<{ models: Array<{ id: stri
     const Store = (await import('electron-store')).default;
     const { ModelRegistry } = await import('@nimbalyst/runtime/ai/server/ModelRegistry');
 
-    const aiStore = new Store<Record<string, unknown>>({ name: 'ai-settings' });
+    const aiStore = new Store<Record<string, unknown>>({ name: 'ai-settings', encryptionKey: AI_SETTINGS_ENCRYPTION_KEY });
     const apiKeys = aiStore.get('apiKeys', {}) as Record<string, string>;
     const providerSettings = aiStore.get('providerSettings', {}) as Record<string, { enabled?: boolean; models?: string[]; baseUrl?: string }>;
 

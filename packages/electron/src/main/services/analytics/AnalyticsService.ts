@@ -182,16 +182,10 @@ export class AnalyticsService {
   }
 
   public allowedToSendAnalytics(): boolean {
-    // Check if user has enabled analytics in settings
-    try {
-      const enabled = isAnalyticsEnabled();
-      return enabled;
-    } catch (error) {
-      this.log.error('[Analytics] Error checking analytics enabled state', { error });
-      // Fail open - if we can't read the setting, allow analytics
-      // This ensures analytics works even if store initialization fails
-      return true;
-    }
+    // Telemetry is disabled in this build. No analytics events are sent
+    // regardless of the user setting. See also the before_send hook in
+    // initPostHogClient() and the renderer PostHog init.
+    return false;
   }
 
   /**
@@ -253,7 +247,8 @@ export class AnalyticsService {
         },
         disableGeoip: false,
         enableExceptionAutocapture: false,
-        before_send: (event) => process.env.PLAYWRIGHT_TEST ? null : event
+        // Telemetry disabled in this build: drop every event at the SDK boundary.
+        before_send: () => null
       }
     );
   }

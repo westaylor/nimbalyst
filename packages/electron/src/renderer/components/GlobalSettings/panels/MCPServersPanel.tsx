@@ -105,7 +105,7 @@ const TEMPLATE_ICON_CONFIG: Record<string, IconConfig> = {
   asana: { type: 'simple-icons', slug: 'asana' },
   slack: { type: 'simple-icons', slug: 'slack' },
   zapier: { type: 'simple-icons', slug: 'zapier' },
-  aws: { type: 'url', url: 'https://cdn.jsdelivr.net/npm/simple-icons/icons/amazonwebservices.svg' },
+  aws: { type: 'material-symbol', icon: 'cloud' },
   stripe: { type: 'simple-icons', slug: 'stripe' },
   snowflake: { type: 'simple-icons', slug: 'snowflake' },
   shopify: { type: 'simple-icons', slug: 'shopify' },
@@ -134,15 +134,15 @@ function MCPServerIcon({ templateId, name, isDark }: { templateId: string; name:
   }
 
   if (config.type === 'simple-icons') {
-    // Simple Icons CDN supports color parameters:
-    // - Default brand color: https://cdn.simpleicons.org/{slug}
-    // - Custom color: https://cdn.simpleicons.org/{slug}/{color}
-    // Most brand icons have colorful logos that work on both backgrounds.
-    // Only override dark/black icons (like GitHub, Notion) in dark mode.
+    // Brand icons are bundled locally (no cdn.simpleicons.org egress).
+    // SVGs live in public/brand-icons/{slug}.svg, brand-coloured at build time.
+    // Dark/black icons (GitHub, Notion) also ship a {slug}-white.svg variant.
+    // A slug with no bundled file 404s and the onError handler shows the
+    // letter fallback - identical to the prior CDN-404 behaviour.
     const needsLightOverride = isDark && DARK_ICONS_NEEDING_LIGHT_OVERRIDE.has(config.slug);
     const iconUrl = needsLightOverride
-      ? `https://cdn.simpleicons.org/${config.slug}/ffffff`
-      : `https://cdn.simpleicons.org/${config.slug}`;
+      ? `/brand-icons/${config.slug}-white.svg`
+      : `/brand-icons/${config.slug}.svg`;
 
     return (
       <img

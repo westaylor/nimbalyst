@@ -240,6 +240,26 @@ async function extractNimext(nimextPath: string, destPath: string): Promise<void
 /**
  * Install an extension from a download URL (.nimext zip file).
  */
+/**
+ * Resolve the on-disk install path for an extension, refusing any id that
+ * escapes the extensions directory. `extensionId` / `manifest.id` is
+ * attacker-influenceable (deep link, marketplace registry, a cloned
+ * manifest.json), and the resolved path feeds `fs.rm(..., { recursive: true })`
+ * on the install/uninstall paths -- an unvalidated id such as `../../..`
+ * would recursively delete an arbitrary directory.
+ */
+function resolveExtensionInstallPath(extensionsDir: string, extensionId: string): string {
+  if (typeof extensionId !== 'string' || extensionId.trim() === '' || extensionId.includes('\0')) {
+    throw new Error(`Invalid extension id: ${String(extensionId)}`);
+  }
+  const installPath = path.join(extensionsDir, extensionId);
+  const rel = path.relative(extensionsDir, installPath);
+  if (rel === '' || rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+    throw new Error(`Refusing extension id that escapes the extensions directory: ${extensionId}`);
+  }
+  return installPath;
+}
+
 async function installFromUrl(
   extensionId: string,
   downloadUrl: string,
@@ -247,7 +267,12 @@ async function installFromUrl(
   version: string,
 ): Promise<InstallResult> {
   const extensionsDir = await getUserExtensionsDirectory();
-  const installPath = path.join(extensionsDir, extensionId);
+  let installPath: string;
+  try {
+    installPath = resolveExtensionInstallPath(extensionsDir, extensionId);
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Invalid extension id' };
+  }
   let tempFile: string | null = null;
 
   try {
@@ -382,7 +407,7 @@ async function installFromGitHub(githubUrl: string): Promise<InstallResult> {
     }
 
     const extensionId = manifest.id;
-    const installPath = path.join(extensionsDir, extensionId);
+    const installPath = resolveExtensionInstallPath(extensionsDir, extensionId);
 
     // Check if already installed
     try {
@@ -470,7 +495,12 @@ async function installFromGitHub(githubUrl: string): Promise<InstallResult> {
  */
 async function uninstallExtension(extensionId: string): Promise<InstallResult> {
   const extensionsDir = await getUserExtensionsDirectory();
-  const installPath = path.join(extensionsDir, extensionId);
+  let installPath: string;
+  try {
+    installPath = resolveExtensionInstallPath(extensionsDir, extensionId);
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Invalid extension id' };
+  }
 
   try {
     logger.main.info(`[ExtMarketplace] Uninstalling extension: ${extensionId}`);

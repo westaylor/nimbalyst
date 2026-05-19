@@ -7,6 +7,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { safeHandle } from '../../utils/ipcRegistry';
 import Store from 'electron-store';
+import { AI_SETTINGS_ENCRYPTION_KEY } from '../../utils/aiSettingsEncryption';
 import {
   SessionManager,
   ProviderFactory,
@@ -387,6 +388,7 @@ export class AIService {
     if (!this.settingsStore) {
       this.settingsStore = new Store<Record<string, unknown>>({
         name: 'ai-settings',
+        encryptionKey: AI_SETTINGS_ENCRYPTION_KEY,
         schema: {
           defaultProvider: {
             type: 'string',
@@ -439,6 +441,11 @@ export class AIService {
           }
         }
       });
+      // Rewrite the ai-settings file once so the at-rest encryption (added
+      // via encryptionKey) takes effect immediately rather than only on the
+      // next settings write. electron-store reads any prior plaintext file
+      // transparently; this assignment writes it back encrypted.
+      this.settingsStore.store = { ...this.settingsStore.store };
       this.migrateClaudeCodeModelList();
     }
     return this.settingsStore;

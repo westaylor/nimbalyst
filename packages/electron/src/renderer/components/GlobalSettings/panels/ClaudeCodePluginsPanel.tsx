@@ -119,10 +119,11 @@ function PluginIcon({ pluginName, category, isDark }: { pluginName: string; cate
   }
 
   if (config.type === 'simple-icons') {
+    // Brand icons are bundled locally (no cdn.simpleicons.org egress).
     const needsLightOverride = isDark && DARK_ICONS_NEEDING_LIGHT_OVERRIDE.has(config.slug);
     const iconUrl = needsLightOverride
-      ? `https://cdn.simpleicons.org/${config.slug}/ffffff`
-      : `https://cdn.simpleicons.org/${config.slug}`;
+      ? `/brand-icons/${config.slug}-white.svg`
+      : `/brand-icons/${config.slug}.svg`;
 
     return (
       <>

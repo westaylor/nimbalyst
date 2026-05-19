@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 // Configure marked for safe rendering
 marked.setOptions({
@@ -52,12 +53,17 @@ export function ReleaseNotesDialog({
     if (!releaseNotes) {
       return '<p>No release notes available.</p>';
     }
+    let html: string;
     try {
-      return marked.parse(releaseNotes) as string;
+      html = marked.parse(releaseNotes) as string;
     } catch (err) {
       console.error('[ReleaseNotesDialog] Failed to parse release notes:', err);
-      return `<p>${releaseNotes}</p>`;
+      html = `<p>${releaseNotes}</p>`;
     }
+    // marked does not sanitize HTML and the release notes originate from a
+    // remote source (a GitHub release body), so strip scripts / event
+    // handlers before this reaches dangerouslySetInnerHTML.
+    return DOMPurify.sanitize(html);
   }, [releaseNotes]);
 
   return (

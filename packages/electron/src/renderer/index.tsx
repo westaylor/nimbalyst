@@ -215,7 +215,8 @@ const posthogClient = posthog.init(
         posthog.people.set_once({ is_dev_user: true });
       }
     },
-    before_send: (event) => process.env.PLAYWRIGHT_TEST ? null : event,
+    // Telemetry disabled in this build: drop every event at the SDK boundary.
+    before_send: () => null,
     debug: isDevInstallation
   }
 )

@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
+import { AI_SETTINGS_ENCRYPTION_KEY } from "../../utils/aiSettingsEncryption";
 import {
   AgentMessagesRepository,
   AISessionsRepository,
@@ -587,7 +588,7 @@ export async function handleGitCommitProposal(
   let isAutoCommit = false;
   try {
     const Store = (await import("electron-store")).default;
-    const aiSettingsStore = new Store({ name: "ai-settings" });
+    const aiSettingsStore = new Store({ name: "ai-settings", encryptionKey: AI_SETTINGS_ENCRYPTION_KEY });
     isAutoCommit = aiSettingsStore.get("autoCommitEnabled", false) as boolean;
   } catch {
     // If we can't read settings, fall through to manual mode
