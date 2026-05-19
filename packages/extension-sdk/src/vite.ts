@@ -32,6 +32,35 @@ export function createManifestValidationPlugin(): Plugin {
 
   return {
     name: 'nimbalyst-manifest-validation',
+    // Stub @anthropic-ai/sdk in extension bundles. Some versions of the SDK
+    // (0.97+) ship a Node-only `agent-toolset/` subtree (node:fs, node:crypto,
+    // node:child_process) that Vite cannot resolve for browser-targeted
+    // extension bundles. Workspace symlink resolution can drag the SDK into
+    // an extension's dependency graph even when the extension's own source
+    // does not import it. Extensions never invoke the SDK directly -- AI
+    // calls go through the host via window.__nimbalyst_extensions / IPC --
+    // so collapse any anthropic-sdk import (bare, subpath, absolute path,
+    // and any relative import from inside an SDK file) to an empty module.
+    enforce: 'pre' as const,
+    resolveId(source: string, importer: string | undefined) {
+      const matchesSdk = (p: string) =>
+        p === '@anthropic-ai/sdk' ||
+        p.startsWith('@anthropic-ai/sdk/') ||
+        /[\\/]@anthropic-ai[\\/]sdk([\\/]|$)/.test(p);
+      if (matchesSdk(source)) {
+        return { id: '\0nimbalyst:empty-anthropic-sdk', moduleSideEffects: false };
+      }
+      if (typeof importer === 'string' && matchesSdk(importer)) {
+        return { id: '\0nimbalyst:empty-anthropic-sdk', moduleSideEffects: false };
+      }
+      return null;
+    },
+    load(id: string) {
+      if (id === '\0nimbalyst:empty-anthropic-sdk') {
+        return 'export default {}; export const __anthropicSdkStubbedInExtension = true;';
+      }
+      return null;
+    },
     configResolved(config) {
       outDir = config.build.outDir;
       rootDir = config.root;
