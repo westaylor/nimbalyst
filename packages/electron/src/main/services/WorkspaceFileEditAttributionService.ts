@@ -20,11 +20,20 @@ interface WorkspaceQueueState {
   processing: boolean;
   recentByFile: Map<string, { ingestedAt: number; eventTimestamp: number }>;
   processedEventKeys: Map<string, number>;
+  // Last threshold we logged a warning for, so we don't spam logs on every
+  // enqueue while sitting above the threshold.
+  lastWarnedThreshold: 0 | typeof QUEUE_WARN_THRESHOLD_50 | typeof QUEUE_WARN_THRESHOLD_80;
 }
 
 const EVENT_DEDUPE_WINDOW_MS = 250;
 const EVENT_TTL_MS = 30_000;
 const MAX_QUEUE_SIZE = 500;
+// Early-warning thresholds. The previous code only logged on full-queue
+// drop, which gave no advance signal before user-visible loss. Upstream
+// #365's diagnostic trace shows ~7 "Queue full" lines in 2s under multi-
+// session load; surface 50%/80% so a future trace catches the build-up.
+const QUEUE_WARN_THRESHOLD_50 = Math.floor(MAX_QUEUE_SIZE * 0.5);
+const QUEUE_WARN_THRESHOLD_80 = Math.floor(MAX_QUEUE_SIZE * 0.8);
 const CODEX_WINDOW_SETTLE_MS = 40;
 
 /** Per-workspace attribution counters for observability. */
@@ -105,7 +114,32 @@ class WorkspaceFileEditAttributionServiceImpl {
       logger.main.warn('[WorkspaceFileEditAttributionService] Queue full, dropping oldest event:', {
         workspacePath,
         filePath,
+        queueLength: state.queue.length,
       });
+    } else if (
+      state.queue.length >= QUEUE_WARN_THRESHOLD_80 &&
+      state.lastWarnedThreshold < QUEUE_WARN_THRESHOLD_80
+    ) {
+      state.lastWarnedThreshold = QUEUE_WARN_THRESHOLD_80;
+      logger.main.warn('[WorkspaceFileEditAttributionService] Queue pressure >=80%:', {
+        workspacePath,
+        queueLength: state.queue.length,
+        max: MAX_QUEUE_SIZE,
+      });
+    } else if (
+      state.queue.length >= QUEUE_WARN_THRESHOLD_50 &&
+      state.lastWarnedThreshold < QUEUE_WARN_THRESHOLD_50
+    ) {
+      state.lastWarnedThreshold = QUEUE_WARN_THRESHOLD_50;
+      logger.main.warn('[WorkspaceFileEditAttributionService] Queue pressure >=50%:', {
+        workspacePath,
+        queueLength: state.queue.length,
+        max: MAX_QUEUE_SIZE,
+      });
+    }
+    // Reset the warning gate once the queue drains back under 50%.
+    if (state.queue.length < QUEUE_WARN_THRESHOLD_50 && state.lastWarnedThreshold > 0) {
+      state.lastWarnedThreshold = 0;
     }
 
     state.recentByFile.set(filePath, {
@@ -133,6 +167,7 @@ class WorkspaceFileEditAttributionServiceImpl {
       processing: false,
       recentByFile: new Map(),
       processedEventKeys: new Map(),
+      lastWarnedThreshold: 0,
     };
     this.stateByWorkspace.set(workspacePath, state);
     return state;

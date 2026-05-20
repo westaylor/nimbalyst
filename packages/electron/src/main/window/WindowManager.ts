@@ -576,7 +576,17 @@ export function createWindow(
 
         // Handle renderer process crashes
         window.webContents.on('render-process-gone', (event, details) => {
-            console.error('[MAIN] Renderer process gone:', details);
+            // Electron's `details` is { reason, exitCode } -- it logs as
+            // "[object Object]" without explicit destructuring, which is what
+            // shayliraz hit in upstream #365 when trying to diagnose the
+            // multi-session crash. Log the fields so the next crash leaves a
+            // usable trail. `reason` values: 'crashed', 'killed',
+            // 'oom', 'launch-failed', 'integrity-failure', etc.
+            console.error('[MAIN] Renderer process gone:', {
+                reason: details?.reason,
+                exitCode: details?.exitCode,
+                windowTitle: window.isDestroyed() ? '(destroyed)' : window.getTitle(),
+            });
             if (!window.isDestroyed()) {
                 // Reload the window
                 window.reload();

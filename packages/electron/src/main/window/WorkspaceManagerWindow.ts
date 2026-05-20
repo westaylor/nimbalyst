@@ -145,7 +145,12 @@ export function createWorkspaceManagerWindow() {
 
   // Handle renderer process crashes
   workspaceManagerWindow.webContents.on('render-process-gone', (event, details) => {
-    console.error('[WorkspaceManager] Renderer process gone:', details);
+    // Destructure -- the raw `details` object logs as "[object Object]"
+    // and that ate the diagnostic in upstream #365.
+    console.error('[WorkspaceManager] Renderer process gone:', {
+      reason: details?.reason,
+      exitCode: details?.exitCode,
+    });
     if (workspaceManagerWindow && !workspaceManagerWindow.isDestroyed()) {
       // Reload the window
       workspaceManagerWindow.reload();
