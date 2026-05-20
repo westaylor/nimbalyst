@@ -885,6 +885,17 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
       // Generate a temporary ID for tracking processing state
       const processingId = `processing-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+      // IMPORTANT: register the processing entry BEFORE any IPC. The send
+      // button and Enter handler both gate on `processingAttachments.length
+      // === 0`, so any window where the gate is open while an attachment is
+      // in flight lets the user send a message without it (upstream #269).
+      // Previously this was set only AFTER `attachment:validate` resolved,
+      // leaving the gate open for the entire validate round trip; pasting a
+      // large block of text and immediately hitting Enter dropped the
+      // attachment. Set the flag synchronously here and clear it only after
+      // `onAttachmentAdd` has fired (or on the error/discard paths).
+      setProcessingAttachments(prev => [...prev, { id: processingId, filename: file.name }]);
+
       // Capture undoCount at the START of the IPC. If undo() advances the
       // counter while the attachment:save IPC is in flight, the user undid
       // past this paste/drop -- we drop the result on resolve.
@@ -899,14 +910,12 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
         });
 
         if (!validation.valid) {
+          setProcessingAttachments(prev => prev.filter(p => p.id !== processingId));
           pasteUndoCountRef.current.delete(processingId);
           console.error('[AIInput] File validation failed:', validation.error);
           alert(validation.error || 'Invalid file');
           return;
         }
-
-        // Add to processing state before starting compression
-        setProcessingAttachments(prev => [...prev, { id: processingId, filename: file.name }]);
 
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -918,23 +927,28 @@ export const AIInput = forwardRef<AIInputRef, AIInputProps>(
           sessionId
         });
 
-        // Remove from processing state
-        setProcessingAttachments(prev => prev.filter(p => p.id !== processingId));
-
         // If the user undid past this paste/drop while the IPC was running,
         // drop the result -- they don't want this attachment back.
         const stillRelevant = pasteUndoCountRef.current.get(processingId) === undoCountAtStart
           && getUndoCount() === undoCountAtStart;
         pasteUndoCountRef.current.delete(processingId);
         if (!stillRelevant) {
+          setProcessingAttachments(prev => prev.filter(p => p.id !== processingId));
           return;
         }
 
         if (result.success && result.attachment) {
+          // Add the attachment to the draft FIRST, then clear the processing
+          // entry. React batches these two state updates within the same
+          // microtask, so the send gate never observes an empty
+          // processingAttachments list before the attachment lands in the
+          // draft -- closing the last remaining race window for #269.
           onAttachmentAdd(result.attachment);
           const reference = `@${file.name} `;
           onChange(value + (value ? ' ' : '') + reference);
+          setProcessingAttachments(prev => prev.filter(p => p.id !== processingId));
         } else {
+          setProcessingAttachments(prev => prev.filter(p => p.id !== processingId));
           console.error('[AIInput] Failed to save attachment:', result.error);
           alert(result.error || 'Failed to save attachment');
         }
