@@ -280,29 +280,34 @@ export const SessionContextMenu: React.FC<SessionContextMenuProps> = ({
           Export as HTML
         </button>
 
-        {/* Group 5: Destructive actions */}
-        {(onArchive || onUnarchive || onDelete) && (
+        {/* Group 5: Destructive actions
+         *
+         * IMPORTANT: Only render the archive/unarchive button when the handler
+         * for the current state is actually wired. Previously the button rendered
+         * whenever EITHER `onArchive` or `onUnarchive` was provided and decided
+         * inside its onClick which one to call -- if the caller wired only one
+         * of them and the session was in the opposite state, the click was a
+         * silent no-op (upstream issue #282). Gate render on state-matched
+         * handler so a visible menu item always does something. */}
+        {((!isArchived && onArchive) || (isArchived && onUnarchive) || onDelete) && (
           <div className="h-px bg-[var(--nim-border)] my-1" />
         )}
-        {(onArchive || onUnarchive) && (
+        {isArchived && onUnarchive && (
           <button
             className={menuItemClass}
-            onClick={(e) => handleAction(e, () => {
-              if (isArchived && onUnarchive) onUnarchive();
-              else if (!isArchived && onArchive) onArchive();
-            })}
+            onClick={(e) => handleAction(e, onUnarchive)}
           >
-            {isArchived ? (
-              <>
-                <MaterialSymbol icon="unarchive" size={14} />
-                Unarchive {selectedCount > 1 ? `${selectedCount} Sessions` : isWorkstream ? 'Workstream' : isWorktreeSession ? 'Worktree' : 'Session'}
-              </>
-            ) : (
-              <>
-                <MaterialSymbol icon="archive" size={14} />
-                Archive {selectedCount > 1 ? `${selectedCount} Sessions` : isWorkstream ? 'Workstream' : isWorktreeSession ? 'Worktree' : 'Session'}
-              </>
-            )}
+            <MaterialSymbol icon="unarchive" size={14} />
+            Unarchive {selectedCount > 1 ? `${selectedCount} Sessions` : isWorkstream ? 'Workstream' : isWorktreeSession ? 'Worktree' : 'Session'}
+          </button>
+        )}
+        {!isArchived && onArchive && (
+          <button
+            className={menuItemClass}
+            onClick={(e) => handleAction(e, onArchive)}
+          >
+            <MaterialSymbol icon="archive" size={14} />
+            Archive {selectedCount > 1 ? `${selectedCount} Sessions` : isWorkstream ? 'Workstream' : isWorktreeSession ? 'Worktree' : 'Session'}
           </button>
         )}
         {onDelete && (
