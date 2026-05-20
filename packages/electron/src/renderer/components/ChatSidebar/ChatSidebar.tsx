@@ -16,6 +16,7 @@ import {
   sessionListChatAtom,
   refreshSessionListAtom,
   initSessionList,
+  addSessionFullAtom,
 } from '../../store';
 import { defaultAgentModelAtom } from '../../store/atoms/appSettings';
 import type { SerializableDocumentContext } from '../../hooks/useDocumentContext';
@@ -64,6 +65,12 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
   // Session list from Jotai - filtered for chat mode (no worktrees, no workstream parents)
   const sessionList = useAtomValue(sessionListChatAtom);
   const refreshSessions = useSetAtom(refreshSessionListAtom);
+  // Optimistic registry add -- mirrors AgentMode's create path so the new
+  // session appears in the agent-mode SessionHistory sidebar immediately,
+  // not on the next IPC refresh. Without this, a session created from the
+  // file-mode chat panel was reachable via the expand button (load by id)
+  // but never showed up in the agent-mode "all sessions" list.
+  const addSession = useSetAtom(addSessionFullAtom);
 
   // Default model for new sessions (user's last selected model)
   const defaultModel = useAtomValue(defaultAgentModelAtom);
@@ -152,8 +159,29 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
           }
         );
         if (result?.success) {
+          // Optimistically register the new session so it appears in the
+          // agent-mode sidebar without waiting for the next IPC refresh.
+          const now = Date.now();
+          addSession({
+            id: newSessionId,
+            title: 'New Session',
+            createdAt: now,
+            updatedAt: now,
+            provider,
+            model: defaultModel,
+            sessionType: 'session',
+            messageCount: 0,
+            workspaceId: workspacePath,
+            isArchived: false,
+            isPinned: false,
+            parentSessionId: null,
+            worktreeId: null,
+            childCount: 0,
+            uncommittedCount: 0,
+          });
           setSessionId(newSessionId);
-          // Refresh the session list to include the new session
+          // Still refresh -- picks up any other server-side fields and
+          // updates other consumers of the list.
           refreshSessions();
         }
       } catch (err) {
@@ -197,10 +225,28 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(({
       }
     );
     if (result?.success) {
+      const now = Date.now();
+      addSession({
+        id: newSessionId,
+        title: 'Chat',
+        createdAt: now,
+        updatedAt: now,
+        provider,
+        model: defaultModel,
+        sessionType: 'session',
+        messageCount: 0,
+        workspaceId: workspacePath,
+        isArchived: false,
+        isPinned: false,
+        parentSessionId: null,
+        worktreeId: null,
+        childCount: 0,
+        uncommittedCount: 0,
+      });
       setSessionId(newSessionId);
       refreshSessions();
     }
-  }, [workspacePath, refreshSessions, defaultModel]);
+  }, [workspacePath, refreshSessions, addSession, defaultModel]);
 
   const handleDeleteSession = useCallback(async (sessionIdToDelete: string) => {
     await window.electronAPI.invoke('session:delete', sessionIdToDelete);
